@@ -64,6 +64,26 @@ function cssSelector(el) {
   return parts.join(' > ');
 }
 
+/**
+ * The dev toolbar strips data-astro-source-* from the live DOM on load, so
+ * we re-fetch the page HTML (attrs intact there) and resolve the selector.
+ */
+async function resolveSource(selector) {
+  try {
+    const html = await fetch(location.pathname, { headers: { accept: 'text/html' } }).then((r) => r.text());
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const src = doc.querySelector(selector)?.closest('[data-astro-source-file]');
+    if (!src) return {};
+    const abs = src.getAttribute('data-astro-source-file');
+    return {
+      sourceFile: abs.includes('/src/') ? `src/${abs.split('/src/').pop()}` : abs,
+      sourceLoc: src.getAttribute('data-astro-source-loc'),
+    };
+  } catch {
+    return {};
+  }
+}
+
 function captureElement(el) {
   const src = el.closest('[data-astro-source-file]');
   const cs = getComputedStyle(el);
@@ -260,6 +280,14 @@ export default defineToolbarApp({
         ? `${capture.sourceFile}${capture.sourceLoc ? `:${capture.sourceLoc}` : ''}`
         : capture.selector;
       popup.appendChild(src);
+      if (!capture.sourceFile) {
+        resolveSource(capture.selector).then((res) => {
+          if (res.sourceFile) {
+            Object.assign(capture, res);
+            src.textContent = `${res.sourceFile}${res.sourceLoc ? `:${res.sourceLoc}` : ''}`;
+          }
+        });
+      }
 
       const ta = document.createElement('textarea');
       ta.placeholder = 'What should change here?';
