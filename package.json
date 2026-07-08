@@ -1,0 +1,29 @@
+{
+  "name": "astrotation",
+  "version": "0.1.0",
+  "description": "Visual feedback for AI coding agents on Astro sites — annotate elements in the dev toolbar, agents receive them live over MCP",
+  "type": "module",
+  "license": "MIT",
+  "author": "Dmytro Karpushyn <d.push91@gmail.com>",
+  "keywords": [
+    "astro-integration",
+    "astro-component",
+    "withastro",
+    "mcp",
+    "annotations",
+    "ai-agents"
+  ],
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src"
+  ],
+  "peerDependencies": {
+    "astro": ">=4.7.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^4.4.3"
+  }
+}
