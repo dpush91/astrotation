@@ -44,23 +44,27 @@ claude mcp add --transport http astrotation http://localhost:7133/mcp
 
 1. `npm run dev`, open the site, click the ⊕ Astrotation icon in the Astro
    dev toolbar.
-2. Click any element → write a note → Save (⌘Enter). Pin appears.
+2. Hover an element (press `↑`/`↓` to select its parent/child for pixel-exact
+   targeting) → click → write a note → Save (⌘Enter). Pin appears.
 3. Tell your agent «глянь анотації» — or put it in hands-free mode:
    *"call astrotation_watch in a loop; for each annotation: acknowledge, fix,
    resolve with a summary"*.
 4. Pins recolor live: 🟡 pending → 🔵 acknowledged → 🟢 resolved / ⚪ dismissed.
-   Agent questions show in the annotation thread; reply inline.
+   Agent questions show in the annotation thread; reply inline. Hit
+   **clear done** in the panel to tidy resolved/dismissed pins.
 
 ## MCP tools
 
 | Tool | Purpose |
 |---|---|
 | `astrotation_list` | All annotations (filter by `status`, `page`) |
+| `astrotation_get` | One annotation, full detail (thread, source, styles, outerHTML) |
 | `astrotation_watch` | Block until new annotations/replies, return batch |
 | `astrotation_acknowledge` | Mark as being worked on |
 | `astrotation_resolve` | Mark fixed, with summary shown to the owner |
 | `astrotation_dismiss` | Decline with a reason |
 | `astrotation_reply` | Ask the owner a clarifying question |
+| `astrotation_clear` | Bulk-remove annotations by status (default: resolved+dismissed) |
 
 ## Options
 
@@ -83,9 +87,12 @@ Add `.astrotation/` to your `.gitignore` (session artifacts, not source).
   "selector": "section#hero > div > p",
   "sourceFile": "src/components/Hero.astro", "sourceLoc": "49:8",
   "classes": "max-w-xs",
+  "section": "Hero",                       // nearest heading — where on the page
+  "role": null,                            // explicit role / aria-label if present
   "styles": "display: block; font-size: 14px; …",
   "text": "Senior product designer across…",
   "selectedText": null,
+  "outerHTML": "<p class=\"max-w-xs\">Senior product designer…</p>",
   "box": { "x": 980, "y": 620, "w": 320, "h": 120 },
   "comment": "make this column wider",
   "status": "pending",

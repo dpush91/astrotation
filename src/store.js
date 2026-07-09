@@ -30,8 +30,15 @@ export class AnnotationStore extends EventEmitter {
   }
 
   save() {
-    fs.mkdirSync(path.dirname(this.file), { recursive: true });
-    fs.writeFileSync(this.file, JSON.stringify(this.annotations, null, 2));
+    try {
+      fs.mkdirSync(path.dirname(this.file), { recursive: true });
+      // Atomic write: a crash mid-write can't leave a truncated/corrupt JSON.
+      const tmp = `${this.file}.${process.pid}.tmp`;
+      fs.writeFileSync(tmp, JSON.stringify(this.annotations, null, 2));
+      fs.renameSync(tmp, this.file);
+    } catch (e) {
+      this.emit('error', e);
+    }
   }
 
   list({ status, page } = {}) {
@@ -75,6 +82,19 @@ export class AnnotationStore extends EventEmitter {
     this.save();
     this.emit('change');
     return true;
+  }
+
+  /** Bulk-remove annotations. Default clears resolved+dismissed (housekeeping). */
+  clear({ status = ['resolved', 'dismissed'] } = {}) {
+    const drop = new Set(Array.isArray(status) ? status : [status]);
+    const before = this.annotations.length;
+    this.annotations = this.annotations.filter((a) => !drop.has(a.status));
+    const removed = before - this.annotations.length;
+    if (removed) {
+      this.save();
+      this.emit('change');
+    }
+    return removed;
   }
 
   reply(id, from, message) {

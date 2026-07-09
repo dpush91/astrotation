@@ -39,6 +39,7 @@ export default function astrotation(opts = {}) {
         const root = server.config.root;
         const file = path.resolve(root, opts.file ?? '.astrotation/annotations.json');
         const store = new AnnotationStore(file);
+        store.on('error', (e) => logger.warn(`annotations store: ${e.message}`));
 
         const pushState = () =>
           toolbar.send('astrotation:state', { annotations: store.list() });
@@ -47,6 +48,7 @@ export default function astrotation(opts = {}) {
         toolbar.on('astrotation:add', (a) => store.add(a));
         toolbar.on('astrotation:delete', ({ id }) => store.remove(id));
         toolbar.on('astrotation:owner-reply', ({ id, message }) => store.reply(id, 'owner', message));
+        toolbar.on('astrotation:clear', () => store.clear());
         store.on('change', pushState);
 
         httpServer = startMcpHttp(store, port, logger);

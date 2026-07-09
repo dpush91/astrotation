@@ -1,5 +1,26 @@
 # Decision Log
 
+## 2026-07-09 — v0.2: capture outerHTML excerpt instead of a raster screenshot
+**Context:** OPEN item was "screenshot attach" for annotation context. A real
+pixel screenshot in-browser needs a heavy/flaky dep (dom-to-image via
+SVG/foreignObject taints the canvas on cross-origin images, fonts miss).
+**Options:** dom-to-image raster · Screen Capture API (permission-gated) ·
+capture trimmed `outerHTML` + section/heading + role/aria.
+**Decision:** Capture a trimmed `outerHTML` excerpt plus `section` (nearest
+heading) and `role`/`aria-label`. Zero deps.
+**Rationale:** For a *coding* agent, the actual markup + source `file:line` +
+computed styles is more actionable than a raster it can't edit. Pixel capture
+logged as a future option, not shipped. Keeps the package dependency-light.
+
+## 2026-07-09 — v0.2: atomic store writes + smoke test as publish gate
+**Context:** `annotations.json` was written with a plain `writeFileSync`; a
+crash mid-write truncates it. No automated verification existed.
+**Decision:** Write to `file.<pid>.tmp` then `renameSync` (atomic on same FS).
+Add `test/smoke.mjs` (store + all MCP tools via InMemoryTransport + /health),
+wired to `npm test` and `prepublishOnly`.
+**Rationale:** The store is the single source of truth across agent+owner; it
+must not corrupt. `prepublishOnly` blocks a broken publish.
+
 ## 2026-07-09 — Original implementation; Agentation as concept reference only
 **Context:** Owner wants an Astro-native replica of agentation.com. Agentation
 is licensed PolyForm Shield 1.0.0 (no competing use; source readable).

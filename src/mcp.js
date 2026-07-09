@@ -7,7 +7,7 @@ const json = (data) => ({
   content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
 });
 
-function buildServer(store) {
+export function buildServer(store) {
   const s = new McpServer({ name: 'astrotation', version: '0.1.0' });
 
   s.registerTool(
@@ -21,6 +21,16 @@ function buildServer(store) {
       },
     },
     async ({ status, page }) => json(store.list({ status, page }))
+  );
+
+  s.registerTool(
+    'astrotation_get',
+    {
+      description:
+        'Fetch one annotation by id with full detail: owner note, thread, Astro source file:line, selector, Tailwind classes, computed styles, captured outerHTML, bounding box. Use to load context before editing the source.',
+      inputSchema: { id: z.string() },
+    },
+    async ({ id }) => json(store.get(id) ?? { error: `no annotation ${id}` })
   );
 
   s.registerTool(
@@ -87,6 +97,21 @@ function buildServer(store) {
       const a = store.reply(id, 'agent', message);
       return json(a ?? { error: `no annotation ${id}` });
     }
+  );
+
+  s.registerTool(
+    'astrotation_clear',
+    {
+      description:
+        'Housekeeping: bulk-remove annotations by status. Defaults to clearing resolved+dismissed once the owner has seen them. Returns the number removed.',
+      inputSchema: {
+        status: z
+          .array(z.enum(['pending', 'acknowledged', 'resolved', 'dismissed']))
+          .optional()
+          .describe('Statuses to remove (default ["resolved","dismissed"])'),
+      },
+    },
+    async ({ status }) => json({ removed: store.clear(status ? { status } : undefined) })
   );
 
   return s;

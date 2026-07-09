@@ -1,24 +1,46 @@
 {
   "name": "astrotation",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Visual feedback for AI coding agents on Astro sites — annotate elements in the dev toolbar, agents receive them live over MCP",
   "type": "module",
   "license": "MIT",
   "author": "Dmytro Karpushyn <d.push91@gmail.com>",
+  "homepage": "https://github.com/dpush91/astrotation#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dpush91/astrotation.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dpush91/astrotation/issues"
+  },
   "keywords": [
     "astro-integration",
     "astro-component",
     "withastro",
     "mcp",
+    "model-context-protocol",
     "annotations",
-    "ai-agents"
+    "visual-feedback",
+    "ai-agents",
+    "claude-code",
+    "dev-toolbar"
   ],
   "exports": {
     ".": "./src/index.js"
   },
   "files": [
-    "src"
+    "src",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
   ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node test/smoke.mjs",
+    "prepublishOnly": "node test/smoke.mjs"
+  },
   "peerDependencies": {
     "astro": ">=4.7.0"
   },

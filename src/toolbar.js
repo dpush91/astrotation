@@ -20,7 +20,9 @@ const STYLE = `
   .atn-btn.atn-ghost { background: transparent; color: #9ca3af; }
   .atn-row { display: flex; gap: 6px; justify-content: flex-end; margin-top: 8px; }
   .atn-panel { position: fixed; right: 12px; bottom: 64px; width: 340px; max-height: 60vh; overflow-y: auto; padding: 10px; }
-  .atn-panel h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #8ab8ff; }
+  .atn-panel h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #8ab8ff; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .atn-clear { background: none; border: 0; color: #6e7681; font: inherit; font-size: 10px; text-transform: none; letter-spacing: 0; cursor: pointer; text-decoration: underline; }
+  .atn-clear:hover { color: #e6edf3; }
   .atn-item { border: 1px solid #21262d; border-radius: 6px; padding: 8px; margin-bottom: 8px; }
   .atn-item .atn-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
   .atn-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
@@ -84,11 +86,26 @@ async function resolveSource(selector) {
   }
 }
 
+/** Trimmed outerHTML so the agent sees real markup without dumping the subtree. */
+function outerHtmlExcerpt(el, max = 600) {
+  const html = (el.outerHTML ?? '').replace(/\s+/g, ' ').trim();
+  return html.length > max ? `${html.slice(0, max)}…` : html;
+}
+
+/** Section/heading the element lives under — orients the agent on the page. */
+function headingContext(el) {
+  const scope = el.closest('section, article, main, header, footer, aside') ?? document.body;
+  const h = scope.querySelector('h1, h2, h3, h4, h5, h6');
+  return h ? (h.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 80) : null;
+}
+
 function captureElement(el) {
   const src = el.closest('[data-astro-source-file]');
   const cs = getComputedStyle(el);
   const rect = el.getBoundingClientRect();
   const sel = window.getSelection();
+  const role = el.getAttribute('role');
+  const ariaLabel = el.getAttribute('aria-label');
   return {
     page: location.pathname,
     url: location.href,
@@ -98,9 +115,12 @@ function captureElement(el) {
     sourceFile: src?.getAttribute('data-astro-source-file') ?? null,
     sourceLoc: src?.getAttribute('data-astro-source-loc') ?? null,
     classes: el.getAttribute('class') ?? '',
+    role: role || (ariaLabel ? `[aria-label="${ariaLabel}"]` : null),
+    section: headingContext(el),
     styles: CAPTURED_STYLES.map((p) => `${p}: ${cs.getPropertyValue(p)}`).join('; '),
     text: (el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 120),
     selectedText: sel && !sel.isCollapsed ? sel.toString().slice(0, 300) : null,
+    outerHTML: outerHtmlExcerpt(el),
     box: {
       x: Math.round(rect.left + scrollX),
       y: Math.round(rect.top + scrollY),
@@ -113,10 +133,13 @@ function captureElement(el) {
 function annotationsToMarkdown(list) {
   let out = `## Page feedback: ${location.pathname}\n\n`;
   list.forEach((a, i) => {
-    out += `${i + 1}. **${a.element}** \`${a.selector}\``;
-    if (a.sourceFile) out += ` — ${a.sourceFile}${a.sourceLoc ? `:${a.sourceLoc}` : ''}`;
+    const loc = a.sourceFile ? `${a.sourceFile}${a.sourceLoc ? `:${a.sourceLoc}` : ''}` : a.selector;
+    out += `${i + 1}. **${a.element}** — \`${loc}\``;
+    if (a.status && a.status !== 'pending') out += ` _(${a.status})_`;
     out += `\n   ${a.comment}\n`;
-    if (a.selectedText) out += `   (re: "${a.selectedText.slice(0, 60)}")\n`;
+    if (a.section) out += `   · under "${a.section}"\n`;
+    if (a.classes) out += `   · classes: \`${a.classes}\`\n`;
+    if (a.selectedText) out += `   · re: "${a.selectedText.slice(0, 60)}"\n`;
   });
   return out;
 }
@@ -126,6 +149,7 @@ export default defineToolbarApp({
     let active = false;
     let annotations = [];
     let openPopup = null;
+    let hoverEl = null;
 
     const style = document.createElement('style');
     style.textContent = STYLE;
@@ -150,7 +174,7 @@ export default defineToolbarApp({
 
     const hint = document.createElement('div');
     hint.className = 'atn-hint';
-    hint.textContent = 'Click element to annotate · Esc to close';
+    hint.textContent = 'Click to annotate · ↑↓ select parent/child · Esc to close';
     hint.style.display = 'none';
     layer.appendChild(hint);
 
@@ -182,6 +206,14 @@ export default defineToolbarApp({
       panel.textContent = '';
       const h = document.createElement('h3');
       h.textContent = `Annotations (${annotations.length})`;
+      const done = annotations.filter((a) => a.status === 'resolved' || a.status === 'dismissed').length;
+      if (done) {
+        const clear = document.createElement('button');
+        clear.className = 'atn-clear';
+        clear.textContent = `clear done (${done})`;
+        clear.onclick = () => server.send('astrotation:clear', {});
+        h.appendChild(clear);
+      }
       panel.appendChild(h);
 
       if (!annotations.length) {
@@ -324,16 +356,13 @@ export default defineToolbarApp({
       openPopup = null;
     }
 
-    const onMove = (e) => {
-      if (!active || openPopup || isOurs(e)) {
-        hl.style.display = 'none';
-        return;
-      }
-      const el = e.target;
+    function highlight(el) {
       if (!el || el === document.body || el === document.documentElement) {
+        hoverEl = null;
         hl.style.display = 'none';
         return;
       }
+      hoverEl = el;
       const rect = el.getBoundingClientRect();
       hl.style.display = 'block';
       hl.style.left = `${rect.left}px`;
@@ -345,6 +374,14 @@ export default defineToolbarApp({
       label.textContent = src
         ? `${src.getAttribute('data-astro-source-file').split('/').slice(-2).join('/')} — ${cssSelector(el)}`
         : cssSelector(el);
+    }
+
+    const onMove = (e) => {
+      if (!active || openPopup || isOurs(e)) {
+        hl.style.display = 'none';
+        return;
+      }
+      highlight(e.target);
     };
 
     const onClick = (e) => {
@@ -355,7 +392,7 @@ export default defineToolbarApp({
         closePopup();
         return;
       }
-      const el = e.target;
+      const el = hoverEl ?? e.target;
       showPopup(el, captureElement(el), e.clientX, e.clientY);
     };
 
@@ -364,6 +401,15 @@ export default defineToolbarApp({
       if (e.key === 'Escape') {
         if (openPopup) closePopup();
         else app.toggleState({ state: false });
+        return;
+      }
+      // Refine the hovered target up/down the DOM tree without moving the mouse.
+      if (!openPopup && hoverEl && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+        const next = e.key === 'ArrowUp' ? hoverEl.parentElement : hoverEl.firstElementChild;
+        if (next && next !== document.body && next !== document.documentElement) {
+          e.preventDefault();
+          highlight(next);
+        }
       }
     };
 
