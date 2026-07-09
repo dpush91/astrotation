@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.2.1 — 2026-07-09
+
+Overlay refactor + performance. No behavior or API change.
+
+### Fixed
+- Typing a reply is no longer lost when a background state push arrives
+  (agent acks/resolves another annotation mid-typing) — the draft is tracked
+  and re-opened across panel rebuilds.
+
+### Performance
+- Panel rebuilds only when annotation data actually changed (signature guard),
+  instead of on every state push — including the initial double-sync.
+- Pin repositioning on scroll/resize is throttled to one `requestAnimationFrame`
+  per frame instead of running on every event.
+- `outerHTML` is clipped before whitespace-collapsing, so a huge subtree isn't
+  regex-processed in full.
+
+### Internal
+- Extracted `openReply()` and a `fileLoc()` helper; removed duplicated
+  `file:line` string-building.
+
 ## 0.2.0 — 2026-07-09
 
 Robustness, richer context, and publish readiness.

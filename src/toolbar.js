@@ -86,9 +86,14 @@ async function resolveSource(selector) {
   }
 }
 
+const fileLoc = (sourceFile, sourceLoc) => `${sourceFile}${sourceLoc ? `:${sourceLoc}` : ''}`;
+
 /** Trimmed outerHTML so the agent sees real markup without dumping the subtree. */
 function outerHtmlExcerpt(el, max = 600) {
-  const html = (el.outerHTML ?? '').replace(/\s+/g, ' ').trim();
+  const raw = el.outerHTML ?? '';
+  // Clip before the regex so a huge subtree isn't whitespace-collapsed in full.
+  const clipped = raw.length > max * 3 ? raw.slice(0, max * 3) : raw;
+  const html = clipped.replace(/\s+/g, ' ').trim();
   return html.length > max ? `${html.slice(0, max)}…` : html;
 }
 
@@ -133,7 +138,7 @@ function captureElement(el) {
 function annotationsToMarkdown(list) {
   let out = `## Page feedback: ${location.pathname}\n\n`;
   list.forEach((a, i) => {
-    const loc = a.sourceFile ? `${a.sourceFile}${a.sourceLoc ? `:${a.sourceLoc}` : ''}` : a.selector;
+    const loc = a.sourceFile ? fileLoc(a.sourceFile, a.sourceLoc) : a.selector;
     out += `${i + 1}. **${a.element}** — \`${loc}\``;
     if (a.status && a.status !== 'pending') out += ` _(${a.status})_`;
     out += `\n   ${a.comment}\n`;
@@ -150,6 +155,8 @@ export default defineToolbarApp({
     let annotations = [];
     let openPopup = null;
     let hoverEl = null;
+    let panelSig = null;                 // skip panel rebuilds when data is unchanged
+    let replyDraft = null;               // { id, text } — survives rebuilds so typing isn't lost
 
     const style = document.createElement('style');
     style.textContent = STYLE;
@@ -197,13 +204,49 @@ export default defineToolbarApp({
           pinsWrap.appendChild(pin);
         });
     }
-    addEventListener('scroll', () => active && renderPins(), { passive: true });
-    addEventListener('resize', () => active && renderPins(), { passive: true });
+    // Scroll/resize fire in bursts; collapse to one reposition per frame.
+    let pinFrame = 0;
+    const repositionPins = () => {
+      if (!active || pinFrame) return;
+      pinFrame = requestAnimationFrame(() => {
+        pinFrame = 0;
+        renderPins();
+      });
+    };
+    addEventListener('scroll', repositionPins, { passive: true });
+    addEventListener('resize', repositionPins, { passive: true });
 
     /* ---------- panel ---------- */
+    function openReply(item, a) {
+      if (item.querySelector('textarea')) return;
+      const ta = document.createElement('textarea');
+      ta.placeholder = 'Reply to agent…';
+      ta.value = replyDraft?.id === a.id ? replyDraft.text : '';
+      replyDraft = { id: a.id, text: ta.value };
+      ta.oninput = () => { replyDraft = { id: a.id, text: ta.value }; };
+      const send = document.createElement('button');
+      send.textContent = 'send';
+      send.onclick = () => {
+        if (!ta.value.trim()) return;
+        server.send('astrotation:owner-reply', { id: a.id, message: ta.value.trim() });
+        replyDraft = null;
+        ta.remove();
+        send.remove();
+      };
+      // Keep Esc/arrows from bubbling to the annotate handler; ⌘Enter sends.
+      ta.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send.onclick();
+        e.stopPropagation();
+      });
+      item.append(ta, send);
+      ta.focus();
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+    }
+
     function renderPanel(focusId) {
       panel.style.display = active ? 'block' : 'none';
       panel.textContent = '';
+      panelSig = JSON.stringify(annotations);
       const h = document.createElement('h3');
       h.textContent = `Annotations (${annotations.length})`;
       const done = annotations.filter((a) => a.status === 'resolved' || a.status === 'dismissed').length;
@@ -265,26 +308,15 @@ export default defineToolbarApp({
         actions.className = 'atn-actions';
         const replyBtn = document.createElement('button');
         replyBtn.textContent = 'reply';
-        replyBtn.onclick = () => {
-          if (item.querySelector('textarea')) return;
-          const ta = document.createElement('textarea');
-          ta.placeholder = 'Reply to agent…';
-          const send = document.createElement('button');
-          send.textContent = 'send';
-          send.onclick = () => {
-            if (!ta.value.trim()) return;
-            server.send('astrotation:owner-reply', { id: a.id, message: ta.value.trim() });
-            ta.remove();
-            send.remove();
-          };
-          item.append(ta, send);
-          ta.focus();
-        };
+        replyBtn.onclick = () => openReply(item, a);
         const delBtn = document.createElement('button');
         delBtn.textContent = 'delete';
         delBtn.onclick = () => server.send('astrotation:delete', { id: a.id });
         actions.append(replyBtn, delBtn);
         item.appendChild(actions);
+
+        // Re-open the reply box across rebuilds so an in-flight draft isn't lost.
+        if (replyDraft?.id === a.id) openReply(item, a);
 
         panel.appendChild(item);
       });
@@ -308,15 +340,13 @@ export default defineToolbarApp({
 
       const src = document.createElement('div');
       src.className = 'atn-src';
-      src.textContent = capture.sourceFile
-        ? `${capture.sourceFile}${capture.sourceLoc ? `:${capture.sourceLoc}` : ''}`
-        : capture.selector;
+      src.textContent = capture.sourceFile ? fileLoc(capture.sourceFile, capture.sourceLoc) : capture.selector;
       popup.appendChild(src);
       if (!capture.sourceFile) {
         resolveSource(capture.selector).then((res) => {
           if (res.sourceFile) {
             Object.assign(capture, res);
-            src.textContent = `${res.sourceFile}${res.sourceLoc ? `:${res.sourceLoc}` : ''}`;
+            src.textContent = fileLoc(res.sourceFile, res.sourceLoc);
           }
         });
       }
@@ -426,7 +456,9 @@ export default defineToolbarApp({
         (n, a) => n + (a.thread?.filter((m) => m.from === 'agent').length ?? 0), 0);
       if (agentMsgs > prevAgentMsgs && !active) app.toggleNotification({ state: true });
       renderPins();
-      renderPanel();
+      // Rebuild the panel only when the data actually changed (the initial
+      // double-sync and unrelated pushes would otherwise wipe an open reply).
+      if (JSON.stringify(annotations) !== panelSig) renderPanel();
     });
 
     app.onToggled(({ state }) => {
