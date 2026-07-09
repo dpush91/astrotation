@@ -27,24 +27,27 @@ const STYLE = `
     --atn-accent-soft: rgba(77, 127, 214, 0.14);
     --atn-accent-ring: rgba(77, 127, 214, 0.28);
     --atn-code: #8ab4f8;
-    --atn-radius: 16px;
-    --atn-radius-sm: 10px;
+    --atn-radius: 0px;
+    --atn-radius-sm: 0px;
+    --atn-line: rgba(255, 255, 255, 0.14);
     --atn-mono: "Hack", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --atn-tex-img: url("${BG_TEXTURE}");
+    --atn-tex: linear-gradient(rgba(11, 11, 13, 0.90), rgba(11, 11, 13, 0.90)), var(--atn-tex-img);
     position: fixed; inset: 0; pointer-events: none; z-index: 2147483000;
     font-family: "Hack", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     color: var(--atn-text);
   }
   .atn-hl { position: fixed; border: 1.5px solid var(--atn-accent); background: var(--atn-accent-soft); border-radius: var(--atn-radius-sm); display: none; transition: all .06s linear; }
-  .atn-hl-label { position: absolute; top: -24px; left: -1.5px; background: var(--atn-bg); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border: 1px solid var(--atn-border); color: var(--atn-code); font-family: var(--atn-mono); font-size: 10px; line-height: 18px; padding: 1px 8px; border-radius: 7px; white-space: nowrap; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; }
-  .atn-pin { position: fixed; width: 22px; height: 22px; border-radius: 50%; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; pointer-events: auto; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.45), 0 0 0 2px rgba(255,255,255,.14); transform: translate(-50%, -50%); transition: transform .1s ease; }
+  .atn-hl-label { position: absolute; top: -24px; left: -1.5px; background: var(--atn-bg); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border: 1px solid var(--atn-border); color: var(--atn-code); font-family: var(--atn-mono); font-size: 10px; line-height: 18px; padding: 1px 8px; border-radius: 0; white-space: nowrap; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; }
+  .atn-pin { position: fixed; width: 22px; height: 22px; border-radius: 0; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; pointer-events: auto; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.45), 0 0 0 2px rgba(255,255,255,.14); transform: translate(-50%, -50%); transition: transform .1s ease; }
   .atn-pin:hover { transform: translate(-50%, -50%) scale(1.12); }
-  .atn-popup, .atn-panel { pointer-events: auto; background-color: var(--atn-bg); background-image: url("${BG_TEXTURE}"); background-size: cover; background-position: center; color: var(--atn-text); border: 1px solid var(--atn-border); border-radius: var(--atn-radius); box-shadow: 0 16px 48px rgba(0,0,0,.55); font-size: 12.5px; }
+  .atn-popup, .atn-panel { pointer-events: auto; background-color: var(--atn-bg); background-image: var(--atn-tex); background-size: cover; background-position: center; color: var(--atn-text); border: 1px solid var(--atn-border); border-radius: var(--atn-radius); box-shadow: 0 16px 48px rgba(0,0,0,.55); font-size: 12.5px; }
   .atn-popup { position: fixed; width: 320px; padding: 14px; }
   .atn-src { color: var(--atn-muted); font-family: var(--atn-mono); font-size: 11px; margin-bottom: 8px; word-break: break-all; }
   .atn-src::before { content: "# "; }
-  /* terminal command line: prompt glyph + borderless input, block caret */
-  .atn-cmd { display: flex; gap: 8px; align-items: flex-start; }
-  .atn-item .atn-cmd { padding-left: 20px; margin-top: 6px; }
+  /* terminal command line: prompt glyph + input, framed top+bottom by hairlines, textured */
+  .atn-cmd { display: flex; gap: 8px; align-items: flex-start; background-color: var(--atn-bg); background-image: var(--atn-tex); background-size: cover; background-position: center; border-top: 1px solid var(--atn-line); border-bottom: 1px solid var(--atn-line); padding: 9px 0; }
+  .atn-item .atn-cmd { margin: 8px 0 0 20px; }
   .atn-prompt { color: var(--atn-accent); font-weight: 700; flex: none; line-height: 1.5; user-select: none; }
   .atn-input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; resize: none; overflow: hidden; margin: 0; padding: 0; color: var(--atn-text); font: inherit; font-family: var(--atn-mono); line-height: 1.5; caret-color: var(--atn-accent); caret-shape: block; }
   .atn-input::placeholder { color: var(--atn-muted); }
@@ -73,7 +76,7 @@ const STYLE = `
   .atn-item .atn-actions button { background: none; border: 0; color: var(--atn-muted); font: inherit; font-size: 11px; cursor: pointer; padding: 0; transition: color .12s ease; }
   .atn-item .atn-actions button:hover { color: var(--atn-text); }
   .atn-empty { color: var(--atn-muted); padding: 4px 0 4px 20px; }
-  .atn-hint { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); background: var(--atn-bg); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border: 1px solid var(--atn-border); color: var(--atn-muted); padding: 5px 14px; border-radius: 8px; font-size: 11px; box-shadow: 0 8px 24px rgba(0,0,0,.4); pointer-events: none; }
+  .atn-hint { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); background: var(--atn-bg); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border: 1px solid var(--atn-border); color: var(--atn-muted); padding: 5px 14px; border-radius: 0; font-size: 11px; box-shadow: 0 8px 24px rgba(0,0,0,.4); pointer-events: none; }
 `;
 
 const CAPTURED_STYLES = [

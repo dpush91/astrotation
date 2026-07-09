@@ -1,6 +1,6 @@
 {
   "name": "astrotation",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Visual feedback for AI coding agents on Astro sites — annotate elements in the dev toolbar, agents receive them live over MCP",
   "type": "module",
   "license": "MIT",

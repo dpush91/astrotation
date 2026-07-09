@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.3 — 2026-07-09
+
+### Changed
+- **Sharp corners everywhere** — radius tokens set to 0; pins, panel, popup,
+  hint and labels are now square (terminal-rectangular).
+- **Texture dialed to ~10%** — regenerated from the original (no +50% bake),
+  shown through a 90% scrim, so it's a faint grain instead of a dark wash.
+- **Input field is now a framed, textured command field** — the `❯` prompt +
+  input sit on the texture, bracketed by top and bottom hairlines (Warp-style),
+  in both the annotate popup and inline replies. Behaviour unchanged.
+
 ## 0.4.2 — 2026-07-09
 
 ### Changed
