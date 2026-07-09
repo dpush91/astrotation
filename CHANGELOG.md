@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1 — 2026-07-09
+
+### Fixed
+- Reply **Send** button was an unstyled default (white) button — now the
+  Warp-blue pill (`.atn-btn`), right-aligned in its own row like the popup
+  Save. Found in dogfooding against a real Warp screenshot.
+
 ## 0.3.0 — 2026-07-09
 
 ### Changed

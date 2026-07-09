@@ -263,20 +263,24 @@ export default defineToolbarApp({
       replyDraft = { id: a.id, text: ta.value };
       ta.oninput = () => { replyDraft = { id: a.id, text: ta.value }; };
       const send = document.createElement('button');
-      send.textContent = 'send';
+      send.className = 'atn-btn';
+      send.textContent = 'Send';
+      const row = document.createElement('div');
+      row.className = 'atn-row';
+      row.appendChild(send);
       send.onclick = () => {
         if (!ta.value.trim()) return;
         server.send('astrotation:owner-reply', { id: a.id, message: ta.value.trim() });
         replyDraft = null;
         ta.remove();
-        send.remove();
+        row.remove();
       };
       // Keep Esc/arrows from bubbling to the annotate handler; ⌘Enter sends.
       ta.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send.onclick();
         e.stopPropagation();
       });
-      item.append(ta, send);
+      item.append(ta, row);
       ta.focus();
       ta.setSelectionRange(ta.value.length, ta.value.length);
     }
