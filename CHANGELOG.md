@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0 — 2026-07-09
+
+### Changed
+- **Warp-inspired overlay redesign.** Cool near-black glass surfaces (blur +
+  saturate) with a faint CSS star-dust texture, muted Warp-blue accent,
+  generous radii (16px panels / 10px elements), Hack mono throughout, and
+  block-style annotation rows with hover. Pins get a soft ring + hover scale;
+  buttons are pill-shaped; textareas have a focus ring. Pure CSS — no external
+  assets, no JS/logic changes, all class names unchanged. Requires a dev
+  server restart to reload the toolbar app.
+
 ## 0.2.2 — 2026-07-09
 
 ### Fixed
