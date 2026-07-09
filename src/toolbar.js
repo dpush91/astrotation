@@ -1,12 +1,15 @@
 import { defineToolbarApp } from 'astro/toolbar';
 
-// Warp-tuned status palette: warm amber, Warp blue, mint, muted slate.
-const STATUS_COLOR = {
-  pending: '#e0a24a',
-  acknowledged: '#4d7fd6',
-  resolved: '#46cf8f',
-  dismissed: '#7b7e88',
+// Warp chip palette + a distinct glyph per status so colour isn't the only
+// signal (colour-blind safe): orange = open, blue = in progress, green = done,
+// red = closed/error. Shapes differ (○ ◑ ✓ ✕), readable without colour.
+const STATUS = {
+  pending:      { color: '#e0a15a', glyph: '○', label: 'open' },
+  acknowledged: { color: '#5b9bf0', glyph: '◑', label: 'in progress' },
+  resolved:     { color: '#6fb26a', glyph: '✓', label: 'resolved' },
+  dismissed:    { color: '#e0685f', glyph: '✕', label: 'dismissed' },
 };
+const statusOf = (s) => STATUS[s] ?? STATUS.pending;
 
 // Warp aesthetic: cool near-black base with a faint star-dust texture, muted
 // blue accent, generous radii, sans chrome + mono only for code (file:line /
@@ -41,7 +44,7 @@ const STYLE = `
   }
   .atn-hl { position: fixed; border: 1.5px solid var(--atn-accent); background: var(--atn-accent-soft); border-radius: var(--atn-radius-sm); display: none; transition: all .06s linear; }
   .atn-hl-label { position: absolute; top: -24px; left: -1.5px; background: var(--atn-bg); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border: 1px solid var(--atn-border); color: var(--atn-code); font-family: var(--atn-mono); font-size: 10px; line-height: 18px; padding: 1px 8px; border-radius: 7px; white-space: nowrap; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; }
-  .atn-pin { position: fixed; width: 22px; height: 22px; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; pointer-events: auto; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.45), 0 0 0 2px rgba(255,255,255,.14); transform: translate(-50%, -50%); transition: transform .1s ease; }
+  .atn-pin { position: fixed; width: 22px; height: 22px; border-radius: 50%; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; pointer-events: auto; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.45), 0 0 0 2px rgba(255,255,255,.14); transform: translate(-50%, -50%); transition: transform .1s ease; }
   .atn-pin:hover { transform: translate(-50%, -50%) scale(1.12); }
   .atn-popup, .atn-panel { pointer-events: auto; background-color: var(--atn-bg); background-image: var(--atn-stars); background-size: 150px 150px; -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4); color: var(--atn-text); border: 1px solid var(--atn-border); border-radius: var(--atn-radius); box-shadow: 0 16px 48px rgba(0,0,0,.55); font-size: 12.5px; }
   .atn-popup { position: fixed; width: 320px; padding: 14px; }
@@ -62,8 +65,9 @@ const STYLE = `
   .atn-item { background: var(--atn-surface); border: 1px solid var(--atn-border); border-radius: var(--atn-radius-sm); padding: 11px; margin-bottom: 9px; transition: background .12s ease, border-color .12s ease; }
   .atn-item:hover { background: var(--atn-surface-hover); }
   .atn-item .atn-meta { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
-  .atn-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; box-shadow: 0 0 8px currentColor; }
-  .atn-item .atn-el { color: var(--atn-code); font-family: var(--atn-mono); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .atn-dot { font-size: 12px; line-height: 1; font-weight: 700; flex: none; width: 13px; text-align: center; }
+  .atn-item .atn-el { color: var(--atn-code); font-family: var(--atn-mono); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+  .atn-status { font-size: 10px; font-weight: 600; letter-spacing: .2px; flex: none; text-transform: lowercase; }
   .atn-item .atn-comment { margin: 5px 0; line-height: 1.45; }
   .atn-thread { border-left: 2px solid var(--atn-border); margin: 8px 0 0; padding-left: 10px; display: flex; flex-direction: column; gap: 5px; }
   .atn-msg { font-size: 11.5px; line-height: 1.45; color: var(--atn-text); }
@@ -231,13 +235,14 @@ export default defineToolbarApp({
       annotations
         .filter((a) => a.page === location.pathname)
         .forEach((a, i) => {
+          const s = statusOf(a.status);
           const pin = document.createElement('div');
           pin.className = 'atn-pin';
-          pin.textContent = String(i + 1);
-          pin.style.background = STATUS_COLOR[a.status] ?? STATUS_COLOR.pending;
+          pin.textContent = s.glyph;
+          pin.style.background = s.color;
           pin.style.left = `${a.box.x + a.box.w / 2 - scrollX}px`;
           pin.style.top = `${a.box.y - scrollY}px`;
-          pin.title = a.comment;
+          pin.title = `#${i + 1} · ${s.label} — ${a.comment}`;
           pin.onclick = () => renderPanel(a.id);
           pinsWrap.appendChild(pin);
         });
@@ -313,17 +318,23 @@ export default defineToolbarApp({
         item.className = 'atn-item';
         if (a.id === focusId) item.style.borderColor = '#4d84ff';
 
+        const s = statusOf(a.status);
         const meta = document.createElement('div');
         meta.className = 'atn-meta';
         const dot = document.createElement('span');
         dot.className = 'atn-dot';
-        dot.style.background = STATUS_COLOR[a.status] ?? STATUS_COLOR.pending;
+        dot.textContent = s.glyph;
+        dot.style.color = s.color;
         const el = document.createElement('span');
         el.className = 'atn-el';
         el.textContent = a.sourceFile
           ? `${a.sourceFile.split('/').pop()}${a.sourceLoc ? `:${a.sourceLoc}` : ''}`
           : a.selector;
-        meta.append(dot, el);
+        const label = document.createElement('span');
+        label.className = 'atn-status';
+        label.textContent = s.label;
+        label.style.color = s.color;
+        meta.append(dot, el, label);
         item.appendChild(meta);
 
         const c = document.createElement('div');

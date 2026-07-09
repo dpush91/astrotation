@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.2 — 2026-07-09
+
+### Changed
+- **Status colours + colour-blind-safe glyphs.** Warp chip palette: open =
+  orange `○`, in progress = blue `◑`, resolved = green `✓`,
+  dismissed = red `✕`. Every status now carries a distinct glyph (shape) and a
+  text label in the panel, so status is readable without relying on colour.
+  Pins show the glyph (not a number); the number moves to the pin tooltip.
+
 ## 0.3.1 — 2026-07-09
 
 ### Fixed
