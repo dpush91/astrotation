@@ -18,14 +18,18 @@ export class AnnotationStore extends EventEmitter {
     this.setMaxListeners(50);
     this.file = file;
     this.annotations = [];
+    this._raw = '[]';
     this.load();
+    this._watch();
   }
 
   load() {
     try {
-      this.annotations = JSON.parse(fs.readFileSync(this.file, 'utf8'));
+      this._raw = fs.readFileSync(this.file, 'utf8');
+      this.annotations = JSON.parse(this._raw);
     } catch {
       this.annotations = [];
+      this._raw = '[]';
     }
   }
 
@@ -33,12 +37,44 @@ export class AnnotationStore extends EventEmitter {
     try {
       fs.mkdirSync(path.dirname(this.file), { recursive: true });
       // Atomic write: a crash mid-write can't leave a truncated/corrupt JSON.
+      const raw = JSON.stringify(this.annotations, null, 2);
       const tmp = `${this.file}.${process.pid}.tmp`;
-      fs.writeFileSync(tmp, JSON.stringify(this.annotations, null, 2));
+      fs.writeFileSync(tmp, raw);
       fs.renameSync(tmp, this.file);
+      this._raw = raw; // so our own write is ignored by the file watcher
     } catch (e) {
       this.emit('error', e);
     }
+  }
+
+  /**
+   * Watch the store file and reload on external writes. This keeps the
+   * in-memory copy fresh when another process (a second dev server holding
+   * the MCP port, or a manual edit) writes the same file, so the MCP never
+   * serves stale data. The shared file doubles as a cross-process sync bus:
+   * an agent resolving via one process turns the pin green in the overlay
+   * served by another.
+   */
+  _watch() {
+    try {
+      this._watcher = fs.watchFile(this.file, { interval: 700 }, () => {
+        let raw;
+        try { raw = fs.readFileSync(this.file, 'utf8'); } catch { return; }
+        if (raw === this._raw) return;            // our own write, or no real change
+        let parsed;
+        try { parsed = JSON.parse(raw); } catch { return; } // ignore a partial read
+        this._raw = raw;
+        this.annotations = parsed;
+        this.emit('change');
+      });
+      this._watcher?.unref?.(); // don't keep the process alive just for the poller
+    } catch (e) {
+      this.emit('error', e);
+    }
+  }
+
+  close() {
+    fs.unwatchFile(this.file);
   }
 
   list({ status, page } = {}) {

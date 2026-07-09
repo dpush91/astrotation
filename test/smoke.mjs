@@ -83,6 +83,24 @@ async function testStore() {
   const timedOut = await store.watch(120, 50);
   assert.equal(timedOut.timedOut, true);
   ok('watch() reports timedOut when nothing happens');
+
+  store.close();
+
+  // File watch: an external write (another process / manual edit) reloads and
+  // emits 'change', so the MCP never serves stale data.
+  const wfile = path.join(tmp, 'watch.json');
+  const watchStore = new AnnotationStore(wfile);
+  const changed = new Promise((res, rej) => {
+    watchStore.once('change', res);
+    setTimeout(() => rej(new Error('watchFile did not fire')), 4000);
+  });
+  fs.writeFileSync(wfile, JSON.stringify(
+    [{ id: 'ext12345', status: 'pending', thread: [], comment: 'external' }], null, 2));
+  await changed;
+  assert.equal(watchStore.list().length, 1);
+  assert.equal(watchStore.get('ext12345').comment, 'external');
+  watchStore.close();
+  ok('store reloads on external file write (watchFile sync bus)');
 }
 
 async function testMcpTools() {

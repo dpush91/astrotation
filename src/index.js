@@ -17,6 +17,7 @@ const ICON = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns=
 export default function astrotation(opts = {}) {
   const port = opts.port ?? 7133;
   let httpServer;
+  let store;
 
   return {
     name: 'astrotation',
@@ -38,7 +39,7 @@ export default function astrotation(opts = {}) {
         }
         const root = server.config.root;
         const file = path.resolve(root, opts.file ?? '.astrotation/annotations.json');
-        const store = new AnnotationStore(file);
+        store = new AnnotationStore(file);
         store.on('error', (e) => logger.warn(`annotations store: ${e.message}`));
 
         const pushState = () =>
@@ -56,6 +57,7 @@ export default function astrotation(opts = {}) {
 
       'astro:server:done': () => {
         httpServer?.close();
+        store?.close();
       },
     },
   };

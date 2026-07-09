@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.2 — 2026-07-09
+
+### Fixed
+- **Stale store / empty MCP list.** The store loaded its file once at startup
+  and never re-read it, so if a second dev server held the MCP port (or the
+  file was edited out of band), `astrotation_list` returned data from the
+  wrong/empty in-memory copy. The store now watches the file (`fs.watchFile`)
+  and reloads on external writes. The shared file also acts as a cross-process
+  sync bus — resolving via the MCP process turns the pin green in an overlay
+  served by another process. Watcher is `unref`'d and closed on
+  `astro:server:done`. Found by dogfooding with two dev servers running.
+
 ## 0.2.1 — 2026-07-09
 
 Overlay refactor + performance. No behavior or API change.
