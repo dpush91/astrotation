@@ -48,35 +48,39 @@ const STYLE = `
   .atn-pin:hover { transform: translate(-50%, -50%) scale(1.12); }
   .atn-popup, .atn-panel { pointer-events: auto; background-color: var(--atn-bg); background-image: var(--atn-stars); background-size: 150px 150px; -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4); color: var(--atn-text); border: 1px solid var(--atn-border); border-radius: var(--atn-radius); box-shadow: 0 16px 48px rgba(0,0,0,.55); font-size: 12.5px; }
   .atn-popup { position: fixed; width: 320px; padding: 14px; }
-  .atn-popup .atn-src { color: var(--atn-code); font-family: var(--atn-mono); font-size: 10.5px; margin-bottom: 10px; word-break: break-all; }
-  .atn-popup textarea, .atn-panel textarea { width: 100%; box-sizing: border-box; background: rgba(0,0,0,.28); color: var(--atn-text); border: 1px solid var(--atn-border); border-radius: var(--atn-radius-sm); padding: 9px 10px; font: inherit; resize: vertical; min-height: 58px; outline: none; transition: border-color .12s ease, box-shadow .12s ease; }
-  .atn-popup textarea:focus, .atn-panel textarea:focus { border-color: var(--atn-accent); box-shadow: 0 0 0 3px var(--atn-accent-ring); }
-  .atn-popup textarea::placeholder, .atn-panel textarea::placeholder { color: var(--atn-muted); }
-  .atn-btn { background: var(--atn-accent); color: #fff; border: 0; border-radius: var(--atn-radius-sm); padding: 7px 15px; font: inherit; font-weight: 600; cursor: pointer; transition: filter .12s ease, transform .06s ease; }
-  .atn-btn:hover { filter: brightness(1.12); }
-  .atn-btn:active { transform: translateY(1px); }
-  .atn-btn.atn-ghost { background: transparent; color: var(--atn-muted); }
-  .atn-btn.atn-ghost:hover { background: var(--atn-surface-hover); color: var(--atn-text); filter: none; }
-  .atn-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
-  .atn-panel { position: fixed; right: 14px; bottom: 68px; width: 360px; max-height: 62vh; overflow-y: auto; padding: 14px; }
-  .atn-panel h3 { margin: 0 0 12px; font-size: 13px; font-weight: 600; letter-spacing: .2px; color: var(--atn-text); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .atn-clear { background: none; border: 0; color: var(--atn-muted); font: inherit; font-size: 11px; font-weight: 500; cursor: pointer; padding: 3px 8px; border-radius: 7px; transition: background .12s ease, color .12s ease; }
-  .atn-clear:hover { color: var(--atn-text); background: var(--atn-surface-hover); }
-  .atn-item { background: var(--atn-surface); border: 1px solid var(--atn-border); border-radius: var(--atn-radius-sm); padding: 11px; margin-bottom: 9px; transition: background .12s ease, border-color .12s ease; }
-  .atn-item:hover { background: var(--atn-surface-hover); }
-  .atn-item .atn-meta { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
-  .atn-dot { font-size: 12px; line-height: 1; font-weight: 700; flex: none; width: 13px; text-align: center; }
-  .atn-item .atn-el { color: var(--atn-code); font-family: var(--atn-mono); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
-  .atn-status { font-size: 10px; font-weight: 600; letter-spacing: .2px; flex: none; text-transform: lowercase; }
-  .atn-item .atn-comment { margin: 5px 0; line-height: 1.45; }
-  .atn-thread { border-left: 2px solid var(--atn-border); margin: 8px 0 0; padding-left: 10px; display: flex; flex-direction: column; gap: 5px; }
-  .atn-msg { font-size: 11.5px; line-height: 1.45; color: var(--atn-text); }
-  .atn-msg b { color: var(--atn-accent); font-weight: 600; }
-  .atn-item .atn-actions { display: flex; gap: 6px; margin-top: 9px; }
-  .atn-item .atn-actions button { background: none; border: 1px solid var(--atn-border); border-radius: 7px; color: var(--atn-muted); font: inherit; font-size: 11px; cursor: pointer; padding: 3px 10px; transition: background .12s ease, color .12s ease; }
-  .atn-item .atn-actions button:hover { background: var(--atn-surface-hover); color: var(--atn-text); }
-  .atn-empty { color: var(--atn-muted); text-align: center; padding: 16px 0; }
-  .atn-hint { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); background: var(--atn-bg); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border: 1px solid var(--atn-border); color: var(--atn-text); padding: 6px 16px; border-radius: 999px; font-size: 11.5px; box-shadow: 0 8px 24px rgba(0,0,0,.4); pointer-events: none; }
+  .atn-src { color: var(--atn-muted); font-family: var(--atn-mono); font-size: 11px; margin-bottom: 8px; word-break: break-all; }
+  .atn-src::before { content: "# "; }
+  /* terminal command line: prompt glyph + borderless input, block caret */
+  .atn-cmd { display: flex; gap: 8px; align-items: flex-start; }
+  .atn-item .atn-cmd { padding-left: 20px; margin-top: 6px; }
+  .atn-prompt { color: var(--atn-accent); font-weight: 700; flex: none; line-height: 1.5; user-select: none; }
+  .atn-input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; resize: none; overflow: hidden; margin: 0; padding: 0; color: var(--atn-text); font: inherit; font-family: var(--atn-mono); line-height: 1.5; caret-color: var(--atn-accent); caret-shape: block; }
+  .atn-input::placeholder { color: var(--atn-muted); }
+  .atn-cmdhint { color: var(--atn-muted); font-size: 10.5px; margin: 8px 0 0 20px; }
+  .atn-cmdhint b { color: var(--atn-text); font-weight: 600; }
+  .atn-btn { background: none; color: var(--atn-muted); border: 0; padding: 2px 0; font: inherit; font-size: 11px; cursor: pointer; transition: color .12s ease; }
+  .atn-btn:hover { color: var(--atn-text); }
+  .atn-panel { position: fixed; right: 14px; bottom: 68px; width: 380px; max-height: 64vh; overflow-y: auto; padding: 14px 16px; }
+  .atn-panel h3 { margin: 0 0 14px; font-size: 12px; font-weight: 500; letter-spacing: .3px; color: var(--atn-muted); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .atn-clear { background: none; border: 0; color: var(--atn-muted); font: inherit; font-size: 11px; cursor: pointer; padding: 0; transition: color .12s ease; }
+  .atn-clear:hover { color: var(--atn-text); }
+  /* annotation = terminal log block: glyph gutter + text, whitespace-separated, no card */
+  .atn-item { margin-bottom: 16px; }
+  .atn-item.atn-focus { box-shadow: inset 3px 0 0 var(--atn-accent); padding-left: 8px; margin-left: -8px; }
+  .atn-item .atn-meta { display: flex; align-items: baseline; gap: 8px; }
+  .atn-dot { font-size: 12px; line-height: 1.4; font-weight: 700; flex: none; width: 12px; text-align: center; }
+  .atn-item .atn-el { color: var(--atn-code); font-family: var(--atn-mono); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+  .atn-status { font-size: 10px; font-weight: 500; letter-spacing: .2px; flex: none; text-transform: lowercase; }
+  .atn-item .atn-comment { margin: 3px 0 0; padding-left: 20px; line-height: 1.5; }
+  .atn-thread { margin: 6px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 3px; }
+  .atn-msg { font-size: 11.5px; line-height: 1.5; color: var(--atn-muted); }
+  .atn-msg .atn-who { color: var(--atn-accent); }
+  .atn-msg .atn-pfx { color: var(--atn-muted); margin-right: 6px; }
+  .atn-item .atn-actions { display: flex; gap: 14px; margin: 7px 0 0; padding-left: 20px; }
+  .atn-item .atn-actions button { background: none; border: 0; color: var(--atn-muted); font: inherit; font-size: 11px; cursor: pointer; padding: 0; transition: color .12s ease; }
+  .atn-item .atn-actions button:hover { color: var(--atn-text); }
+  .atn-empty { color: var(--atn-muted); padding: 4px 0 4px 20px; }
+  .atn-hint { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); background: var(--atn-bg); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border: 1px solid var(--atn-border); color: var(--atn-muted); padding: 5px 14px; border-radius: 8px; font-size: 11px; box-shadow: 0 8px 24px rgba(0,0,0,.4); pointer-events: none; }
 `;
 
 const CAPTURED_STYLES = [
@@ -191,6 +195,38 @@ function annotationsToMarkdown(list) {
   return out;
 }
 
+/**
+ * Terminal-style command line: an accent ❯ prompt + a borderless auto-growing
+ * input with a block caret. Enter submits, Shift+Enter newline, Esc cancels.
+ */
+function cmdLine(placeholder, initial, onSubmit, onCancel) {
+  const wrap = document.createElement('div');
+  wrap.className = 'atn-cmd';
+  const prompt = document.createElement('span');
+  prompt.className = 'atn-prompt';
+  prompt.textContent = '❯';
+  const ta = document.createElement('textarea');
+  ta.className = 'atn-input';
+  ta.rows = 1;
+  ta.placeholder = placeholder;
+  ta.value = initial ?? '';
+  const grow = () => { ta.style.height = 'auto'; ta.style.height = `${ta.scrollHeight}px`; };
+  ta.addEventListener('input', grow);
+  ta.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const v = ta.value.trim();
+      if (v) onSubmit(v);
+      return;
+    }
+    if (e.key === 'Escape') { e.preventDefault(); onCancel?.(); }
+    e.stopPropagation();
+  });
+  wrap.append(prompt, ta);
+  requestAnimationFrame(grow);
+  return { wrap, ta };
+}
+
 export default defineToolbarApp({
   init(canvas, app, server) {
     let active = false;
@@ -261,31 +297,21 @@ export default defineToolbarApp({
 
     /* ---------- panel ---------- */
     function openReply(item, a) {
-      if (item.querySelector('textarea')) return;
-      const ta = document.createElement('textarea');
-      ta.placeholder = 'Reply to agent…';
-      ta.value = replyDraft?.id === a.id ? replyDraft.text : '';
-      replyDraft = { id: a.id, text: ta.value };
-      ta.oninput = () => { replyDraft = { id: a.id, text: ta.value }; };
-      const send = document.createElement('button');
-      send.className = 'atn-btn';
-      send.textContent = 'Send';
-      const row = document.createElement('div');
-      row.className = 'atn-row';
-      row.appendChild(send);
-      send.onclick = () => {
-        if (!ta.value.trim()) return;
-        server.send('astrotation:owner-reply', { id: a.id, message: ta.value.trim() });
-        replyDraft = null;
-        ta.remove();
-        row.remove();
-      };
-      // Keep Esc/arrows from bubbling to the annotate handler; ⌘Enter sends.
-      ta.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send.onclick();
-        e.stopPropagation();
-      });
-      item.append(ta, row);
+      if (item.querySelector('.atn-cmd')) return;
+      const initial = replyDraft?.id === a.id ? replyDraft.text : '';
+      replyDraft = { id: a.id, text: initial };
+      const { wrap, ta } = cmdLine(
+        'reply…',
+        initial,
+        (val) => {
+          server.send('astrotation:owner-reply', { id: a.id, message: val });
+          replyDraft = null;
+          wrap.remove();
+        },
+        () => { replyDraft = null; wrap.remove(); }
+      );
+      ta.addEventListener('input', () => { replyDraft = { id: a.id, text: ta.value }; });
+      item.appendChild(wrap);
       ta.focus();
       ta.setSelectionRange(ta.value.length, ta.value.length);
     }
@@ -295,7 +321,7 @@ export default defineToolbarApp({
       panel.textContent = '';
       panelSig = JSON.stringify(annotations);
       const h = document.createElement('h3');
-      h.textContent = `Annotations (${annotations.length})`;
+      h.textContent = `annotations (${annotations.length})`;
       const done = annotations.filter((a) => a.status === 'resolved' || a.status === 'dismissed').length;
       if (done) {
         const clear = document.createElement('button');
@@ -316,7 +342,7 @@ export default defineToolbarApp({
       annotations.forEach((a) => {
         const item = document.createElement('div');
         item.className = 'atn-item';
-        if (a.id === focusId) item.style.borderColor = '#4d84ff';
+        if (a.id === focusId) item.classList.add('atn-focus');
 
         const s = statusOf(a.status);
         const meta = document.createElement('div');
@@ -348,10 +374,13 @@ export default defineToolbarApp({
           a.thread.forEach((m) => {
             const msg = document.createElement('div');
             msg.className = 'atn-msg';
-            const who = document.createElement('b');
-            who.textContent = m.from === 'agent' ? 'agent: ' : 'me: ';
-            msg.appendChild(who);
-            msg.appendChild(document.createTextNode(m.message));
+            const pfx = document.createElement('span');
+            pfx.className = 'atn-pfx';
+            pfx.textContent = '❯';
+            const who = document.createElement('span');
+            who.className = 'atn-who';
+            who.textContent = `${m.from === 'agent' ? 'agent' : 'me'}: `;
+            msg.append(pfx, who, document.createTextNode(m.message));
             th.appendChild(msg);
           });
           item.appendChild(th);
@@ -377,7 +406,8 @@ export default defineToolbarApp({
       if (annotations.length) {
         const copy = document.createElement('button');
         copy.className = 'atn-btn';
-        copy.textContent = 'Copy markdown';
+        copy.style.marginTop = '4px';
+        copy.textContent = 'copy markdown';
         copy.onclick = () => navigator.clipboard.writeText(annotationsToMarkdown(annotations));
         panel.appendChild(copy);
       }
@@ -404,34 +434,25 @@ export default defineToolbarApp({
         });
       }
 
-      const ta = document.createElement('textarea');
-      ta.placeholder = 'What should change here?';
-      popup.appendChild(ta);
+      const { wrap, ta } = cmdLine(
+        'what should change here…',
+        '',
+        (val) => {
+          server.send('astrotation:add', { ...capture, comment: val });
+          closePopup();
+        },
+        closePopup
+      );
+      popup.appendChild(wrap);
 
-      const row = document.createElement('div');
-      row.className = 'atn-row';
-      const cancel = document.createElement('button');
-      cancel.className = 'atn-btn atn-ghost';
-      cancel.textContent = 'Cancel';
-      cancel.onclick = closePopup;
-      const save = document.createElement('button');
-      save.className = 'atn-btn';
-      save.textContent = 'Save';
-      save.onclick = () => {
-        if (!ta.value.trim()) return;
-        server.send('astrotation:add', { ...capture, comment: ta.value.trim() });
-        closePopup();
-      };
-      row.append(cancel, save);
-      popup.appendChild(row);
+      const cmdHint = document.createElement('div');
+      cmdHint.className = 'atn-cmdhint';
+      cmdHint.innerHTML = '<b>⏎</b> save   <b>esc</b> cancel';
+      popup.appendChild(cmdHint);
 
       layer.appendChild(popup);
       openPopup = popup;
       ta.focus();
-      ta.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) save.onclick();
-        e.stopPropagation();
-      });
     }
 
     function closePopup() {

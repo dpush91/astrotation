@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.0 — 2026-07-09
+
+### Changed
+- **Terminal-native overlay — no more cards.** Reworked the overlay to read as
+  a continuation of the terminal instead of a stack of AI-style cards:
+  - Input is a terminal command line — an accent `❯` prompt + a borderless
+    auto-growing field with a block caret. Enter submits, Shift+Enter newline,
+    Esc cancels. No boxed textarea, no Save/Cancel buttons (a dim
+    `⏎ save · esc cancel` hint instead).
+  - Annotations render as terminal log blocks: a status glyph gutter + file:line
+    + comment, separated by whitespace — no borders, no card backgrounds, no
+    hover boxes. Thread replies show as `❯ agent:` / `❯ me:` lines.
+  - Panel/popup keep the Warp window chrome (near-black glass + star-dust);
+    everything inside is monospace terminal output. Focused item gets a left
+    accent rule, not a border.
+
 ## 0.3.2 — 2026-07-09
 
 ### Changed
