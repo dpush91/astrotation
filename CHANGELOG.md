@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.4 — 2026-07-09
+
+### Changed
+- Selective rounding: panel, popup and the hovered-element label are 12px
+  rounded again; the top "click to annotate" hint is a full pill; pins are
+  round again. The blue element-selection box stays sharp (rectangular).
+- The input field's frame lines are now full-width (edge-to-edge, bleeding to
+  the container edge) and 100% white — in both the popup and inline replies.
+  Item dividers stay subtle so only the input reads as bold white lines.
+
 ## 0.4.3 — 2026-07-09
 
 ### Changed
