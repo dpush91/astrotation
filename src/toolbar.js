@@ -38,6 +38,15 @@ const STYLE = `
       radial-gradient(1px 1px at 90% 46%, rgba(255,255,255,.06), transparent 60%),
       radial-gradient(1px 1px at 27% 89%, rgba(255,255,255,.06), transparent 60%),
       radial-gradient(1px 1px at 52% 92%, rgba(255,255,255,.05), transparent 60%);
+    /* Splatter glow in the spirit of Warp's "Phenomenon" — original ink blobs,
+       muted teal/indigo/magenta at low alpha so text stays readable */
+    --atn-splatter:
+      radial-gradient(150px 110px at 16% 10%, rgba(64,150,170,.13), transparent 70%),
+      radial-gradient(190px 150px at 90% 86%, rgba(158,74,150,.11), transparent 72%),
+      radial-gradient(110px 90px at 72% 22%, rgba(84,102,214,.10), transparent 70%),
+      radial-gradient(60px 60px at 40% 64%, rgba(90,172,182,.10), transparent 68%),
+      radial-gradient(34px 34px at 60% 78%, rgba(168,92,162,.10), transparent 66%),
+      radial-gradient(20px 20px at 30% 44%, rgba(96,168,200,.12), transparent 60%);
     position: fixed; inset: 0; pointer-events: none; z-index: 2147483000;
     font-family: "Hack", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     color: var(--atn-text);
@@ -46,7 +55,7 @@ const STYLE = `
   .atn-hl-label { position: absolute; top: -24px; left: -1.5px; background: var(--atn-bg); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border: 1px solid var(--atn-border); color: var(--atn-code); font-family: var(--atn-mono); font-size: 10px; line-height: 18px; padding: 1px 8px; border-radius: 7px; white-space: nowrap; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; }
   .atn-pin { position: fixed; width: 22px; height: 22px; border-radius: 50%; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; pointer-events: auto; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.45), 0 0 0 2px rgba(255,255,255,.14); transform: translate(-50%, -50%); transition: transform .1s ease; }
   .atn-pin:hover { transform: translate(-50%, -50%) scale(1.12); }
-  .atn-popup, .atn-panel { pointer-events: auto; background-color: var(--atn-bg); background-image: var(--atn-stars); background-size: 150px 150px; -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4); color: var(--atn-text); border: 1px solid var(--atn-border); border-radius: var(--atn-radius); box-shadow: 0 16px 48px rgba(0,0,0,.55); font-size: 12.5px; }
+  .atn-popup, .atn-panel { pointer-events: auto; background-color: var(--atn-bg); background-image: var(--atn-stars), var(--atn-splatter); background-size: 150px 150px, cover; background-repeat: repeat, no-repeat; background-position: 0 0, center; -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4); color: var(--atn-text); border: 1px solid var(--atn-border); border-radius: var(--atn-radius); box-shadow: 0 16px 48px rgba(0,0,0,.55); font-size: 12.5px; }
   .atn-popup { position: fixed; width: 320px; padding: 14px; }
   .atn-src { color: var(--atn-muted); font-family: var(--atn-mono); font-size: 11px; margin-bottom: 8px; word-break: break-all; }
   .atn-src::before { content: "# "; }
@@ -64,8 +73,9 @@ const STYLE = `
   .atn-panel h3 { margin: 0 0 14px; font-size: 12px; font-weight: 500; letter-spacing: .3px; color: var(--atn-muted); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .atn-clear { background: none; border: 0; color: var(--atn-muted); font: inherit; font-size: 11px; cursor: pointer; padding: 0; transition: color .12s ease; }
   .atn-clear:hover { color: var(--atn-text); }
-  /* annotation = terminal log block: glyph gutter + text, whitespace-separated, no card */
-  .atn-item { margin-bottom: 16px; }
+  /* annotation = terminal log block: glyph gutter + text, hairline divider between */
+  .atn-item { padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--atn-border); }
+  .atn-item:last-of-type { border-bottom: 0; padding-bottom: 0; margin-bottom: 6px; }
   .atn-item.atn-focus { box-shadow: inset 3px 0 0 var(--atn-accent); padding-left: 8px; margin-left: -8px; }
   .atn-item .atn-meta { display: flex; align-items: baseline; gap: 8px; }
   .atn-dot { font-size: 12px; line-height: 1.4; font-weight: 700; flex: none; width: 12px; text-align: center; }

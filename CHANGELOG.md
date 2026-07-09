@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.1 — 2026-07-09
+
+### Added
+- **Splatter background** in the spirit of Warp's "Phenomenon" theme — an
+  original layered ink-blob glow (muted teal/indigo/magenta at low alpha)
+  under the star-dust. Recreated, not copied: Warp's bundled art isn't
+  redistributed in this MIT package.
+- **Hairline dividers** between annotations in the panel list.
+
 ## 0.4.0 — 2026-07-09
 
 ### Changed
