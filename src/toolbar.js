@@ -32,7 +32,7 @@ const STYLE = `
     --atn-line: rgba(255, 255, 255, 1);
     --atn-mono: "Hack", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     --atn-tex-img: url("${BG_TEXTURE}");
-    --atn-tex: linear-gradient(rgba(11, 11, 13, 0.90), rgba(11, 11, 13, 0.90)), var(--atn-tex-img);
+    --atn-tex: var(--atn-tex-img);
     position: fixed; inset: 0; pointer-events: none; z-index: 2147483000;
     font-family: "Hack", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     color: var(--atn-text);

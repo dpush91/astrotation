@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.5 — 2026-07-09
+
+### Changed
+- Background shows the **original texture at full strength** — dropped the 90%
+  scrim so the grunge is clearly visible (was too faint at ~10%). The texture's
+  own dark vignette keeps the edges readable.
+
 ## 0.4.4 — 2026-07-09
 
 ### Changed
