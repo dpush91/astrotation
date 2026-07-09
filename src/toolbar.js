@@ -1,4 +1,5 @@
 import { defineToolbarApp } from 'astro/toolbar';
+import { BG_TEXTURE } from './bg.js';
 
 // Warp chip palette + a distinct glyph per status so colour isn't the only
 // signal (colour-blind safe): orange = open, blue = in progress, green = done,
@@ -29,24 +30,6 @@ const STYLE = `
     --atn-radius: 16px;
     --atn-radius-sm: 10px;
     --atn-mono: "Hack", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    /* Warp star-dust: sparse faint specks, tiled so panels of any size fill */
-    --atn-stars:
-      radial-gradient(1.1px 1.1px at 14% 22%, rgba(255,255,255,.11), transparent 60%),
-      radial-gradient(1px 1px at 38% 64%, rgba(255,255,255,.08), transparent 60%),
-      radial-gradient(1px 1px at 61% 31%, rgba(255,255,255,.07), transparent 60%),
-      radial-gradient(1.3px 1.3px at 82% 76%, rgba(255,255,255,.09), transparent 60%),
-      radial-gradient(1px 1px at 90% 46%, rgba(255,255,255,.06), transparent 60%),
-      radial-gradient(1px 1px at 27% 89%, rgba(255,255,255,.06), transparent 60%),
-      radial-gradient(1px 1px at 52% 92%, rgba(255,255,255,.05), transparent 60%);
-    /* Splatter glow in the spirit of Warp's "Phenomenon" — original ink blobs,
-       muted teal/indigo/magenta at low alpha so text stays readable */
-    --atn-splatter:
-      radial-gradient(150px 110px at 16% 10%, rgba(64,150,170,.13), transparent 70%),
-      radial-gradient(190px 150px at 90% 86%, rgba(158,74,150,.11), transparent 72%),
-      radial-gradient(110px 90px at 72% 22%, rgba(84,102,214,.10), transparent 70%),
-      radial-gradient(60px 60px at 40% 64%, rgba(90,172,182,.10), transparent 68%),
-      radial-gradient(34px 34px at 60% 78%, rgba(168,92,162,.10), transparent 66%),
-      radial-gradient(20px 20px at 30% 44%, rgba(96,168,200,.12), transparent 60%);
     position: fixed; inset: 0; pointer-events: none; z-index: 2147483000;
     font-family: "Hack", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     color: var(--atn-text);
@@ -55,7 +38,7 @@ const STYLE = `
   .atn-hl-label { position: absolute; top: -24px; left: -1.5px; background: var(--atn-bg); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border: 1px solid var(--atn-border); color: var(--atn-code); font-family: var(--atn-mono); font-size: 10px; line-height: 18px; padding: 1px 8px; border-radius: 7px; white-space: nowrap; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; }
   .atn-pin { position: fixed; width: 22px; height: 22px; border-radius: 50%; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; pointer-events: auto; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.45), 0 0 0 2px rgba(255,255,255,.14); transform: translate(-50%, -50%); transition: transform .1s ease; }
   .atn-pin:hover { transform: translate(-50%, -50%) scale(1.12); }
-  .atn-popup, .atn-panel { pointer-events: auto; background-color: var(--atn-bg); background-image: var(--atn-stars), var(--atn-splatter); background-size: 150px 150px, cover; background-repeat: repeat, no-repeat; background-position: 0 0, center; -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4); color: var(--atn-text); border: 1px solid var(--atn-border); border-radius: var(--atn-radius); box-shadow: 0 16px 48px rgba(0,0,0,.55); font-size: 12.5px; }
+  .atn-popup, .atn-panel { pointer-events: auto; background-color: var(--atn-bg); background-image: url("${BG_TEXTURE}"); background-size: cover; background-position: center; color: var(--atn-text); border: 1px solid var(--atn-border); border-radius: var(--atn-radius); box-shadow: 0 16px 48px rgba(0,0,0,.55); font-size: 12.5px; }
   .atn-popup { position: fixed; width: 320px; padding: 14px; }
   .atn-src { color: var(--atn-muted); font-family: var(--atn-mono); font-size: 11px; margin-bottom: 8px; word-break: break-all; }
   .atn-src::before { content: "# "; }

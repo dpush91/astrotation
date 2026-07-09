@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.2 — 2026-07-09
+
+### Changed
+- **Background is now the owner-supplied grunge texture** (darkened +50% black,
+  resized, webp, baked as a data-uri in `src/bg.js`) instead of the generated
+  splatter + star-dust, which were removed. Panels/popup drop the backdrop
+  blur (the texture is opaque). Verified via an offscreen render of the real
+  STYLE before shipping.
+  NOTE: the texture is embedded for local dogfood use; swap it for an
+  own/CC0 asset before any npm publish (MIT package shouldn't redistribute it).
+
 ## 0.4.1 — 2026-07-09
 
 ### Added
