@@ -49,6 +49,7 @@ export default function astrotation(opts = {}) {
         toolbar.on('astrotation:add', (a) => store.add(a));
         toolbar.on('astrotation:delete', ({ id }) => store.remove(id));
         toolbar.on('astrotation:owner-reply', ({ id, message }) => store.reply(id, 'owner', message));
+        toolbar.on('astrotation:set-status', ({ id, status }) => store.update(id, { status }));
         toolbar.on('astrotation:clear', () => store.clear());
         store.on('change', pushState);
 

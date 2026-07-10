@@ -2,15 +2,21 @@ import { defineToolbarApp } from 'astro/toolbar';
 import { BG_TEXTURE } from './bg.js';
 
 // Warp chip palette + a distinct glyph per status so colour isn't the only
-// signal (colour-blind safe): orange = open, blue = in progress, green = done,
-// red = closed/error. Shapes differ (○ ◑ ✓ ✕), readable without colour.
+// signal (colour-blind safe): orange = open, blue = in progress, red ◆ = agent
+// handed back for review, green = owner-approved, coral ✕ = dismissed.
+// Shapes differ (○ ◑ ◆ ✓ ✕), readable without colour.
 const STATUS = {
   pending:      { color: '#e0a15a', glyph: '○', label: 'open' },
   acknowledged: { color: '#5b9bf0', glyph: '◑', label: 'in progress' },
+  feedback:     { color: '#ef4d5a', glyph: '◆', label: 'feedback' },
   resolved:     { color: '#6fb26a', glyph: '✓', label: 'resolved' },
   dismissed:    { color: '#e0685f', glyph: '✕', label: 'dismissed' },
 };
 const statusOf = (s) => STATUS[s] ?? STATUS.pending;
+
+// Panel header affordances: 6-dot drag grip + collapse/expand chevron.
+const GRIP_SVG = '<svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="2" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="2" cy="14" r="1.3"/><circle cx="8" cy="14" r="1.3"/></svg>';
+const CHEVRON_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
 
 // Warp aesthetic: cool near-black base with a faint star-dust texture, muted
 // blue accent, generous radii, sans chrome + mono only for code (file:line /
@@ -27,6 +33,7 @@ const STYLE = `
     --atn-accent-soft: rgba(77, 127, 214, 0.14);
     --atn-accent-ring: rgba(77, 127, 214, 0.28);
     --atn-code: #8ab4f8;
+    --atn-claude: #d97757;
     --atn-radius: 12px;
     --atn-radius-sm: 0px;
     --atn-line: rgba(255, 255, 255, 1);
@@ -58,7 +65,22 @@ const STYLE = `
   .atn-btn { background: none; color: var(--atn-muted); border: 0; padding: 2px 0; font: inherit; font-size: 11px; cursor: pointer; transition: color .12s ease; }
   .atn-btn:hover { color: var(--atn-text); }
   .atn-panel { position: fixed; right: 14px; bottom: 68px; width: 380px; max-height: 64vh; overflow-y: auto; padding: 14px 16px; }
-  .atn-panel h3 { margin: 0 0 14px; font-size: 12px; font-weight: 500; letter-spacing: .3px; color: var(--atn-muted); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  /* header row + edge-to-edge hairline under it, so it reads as the annotations header */
+  .atn-head { display: flex; align-items: center; gap: 10px; margin: 0 -16px 12px; padding: 0 16px 12px; border-bottom: 1px solid var(--atn-border); }
+  .atn-panel--collapsed { width: auto; overflow: visible; }
+  .atn-panel--collapsed .atn-head { margin: 0; padding: 0; border-bottom: 0; }
+  .atn-grip { flex: none; display: flex; align-items: center; color: var(--atn-muted); cursor: grab; padding: 2px; margin: -2px; touch-action: none; }
+  .atn-grip:hover { color: var(--atn-text); }
+  .atn-grip:active { cursor: grabbing; }
+  .atn-grip svg { display: block; }
+  .atn-headmid { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+  .atn-title { font-size: 12px; font-weight: 500; letter-spacing: .3px; color: var(--atn-muted); }
+  .atn-headmid .atn-clear { margin-left: auto; }
+  .atn-stat { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--atn-text); font-variant-numeric: tabular-nums; }
+  .atn-stat i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .atn-chev { flex: none; background: none; border: 0; color: var(--atn-muted); cursor: pointer; padding: 2px; margin: -2px; display: flex; transition: color .12s ease, transform .18s ease; }
+  .atn-chev:hover { color: var(--atn-text); }
+  .atn-chev.is-collapsed { transform: rotate(180deg); }
   .atn-clear { background: none; border: 0; color: var(--atn-muted); font: inherit; font-size: 11px; cursor: pointer; padding: 0; transition: color .12s ease; }
   .atn-clear:hover { color: var(--atn-text); }
   /* annotation = terminal log block: glyph gutter + text, hairline divider between */
@@ -72,11 +94,15 @@ const STYLE = `
   .atn-item .atn-comment { margin: 3px 0 0; padding-left: 20px; line-height: 1.5; }
   .atn-thread { margin: 6px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 3px; }
   .atn-msg { font-size: 11.5px; line-height: 1.5; color: var(--atn-muted); }
-  .atn-msg .atn-who { color: var(--atn-accent); }
+  .atn-msg .atn-who-me { color: var(--atn-text); }
+  .atn-msg .atn-who-agent { color: var(--atn-claude); }
   .atn-msg .atn-pfx { color: var(--atn-muted); margin-right: 6px; }
   .atn-item .atn-actions { display: flex; gap: 14px; margin: 7px 0 0; padding-left: 20px; }
   .atn-item .atn-actions button { background: none; border: 0; color: var(--atn-muted); font: inherit; font-size: 11px; cursor: pointer; padding: 0; transition: color .12s ease; }
   .atn-item .atn-actions button:hover { color: var(--atn-text); }
+  .atn-item .atn-actions .atn-resolve { margin-left: auto; }
+  .atn-item .atn-actions .atn-resolve:not(.is-resolved):hover { color: #6fb26a; }
+  .atn-foot { display: flex; justify-content: flex-end; margin: 10px -16px 0; padding: 10px 16px 0; border-top: 1px solid var(--atn-border); }
   .atn-empty { color: var(--atn-muted); padding: 4px 0 4px 20px; }
   .atn-hint { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); background: var(--atn-bg); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border: 1px solid var(--atn-border); color: var(--atn-muted); padding: 5px 14px; border-radius: 999px; font-size: 11px; box-shadow: 0 8px 24px rgba(0,0,0,.4); pointer-events: none; }
 `;
@@ -233,6 +259,8 @@ export default defineToolbarApp({
     let hoverEl = null;
     let panelSig = null;                 // skip panel rebuilds when data is unchanged
     let replyDraft = null;               // { id, text } — survives rebuilds so typing isn't lost
+    let panelCollapsed = false;          // collapsed = compact bar (grip · status dots · chevron)
+    let panelPos = null;                 // { left, top } once dragged; else CSS bottom-right anchor
 
     const style = document.createElement('style');
     style.textContent = STYLE;
@@ -314,21 +342,90 @@ export default defineToolbarApp({
       ta.setSelectionRange(ta.value.length, ta.value.length);
     }
 
+    // Reposition the panel after a drag (switches anchor from CSS bottom-right to left/top).
+    function applyPanelPos() {
+      if (!panelPos) return;
+      panel.style.left = `${panelPos.left}px`;
+      panel.style.top = `${panelPos.top}px`;
+      panel.style.right = 'auto';
+      panel.style.bottom = 'auto';
+    }
+    // Grab the grip → drag the whole panel; clamped to the viewport.
+    function startDrag(e) {
+      e.preventDefault();
+      const rect = panel.getBoundingClientRect();
+      const offX = e.clientX - rect.left;
+      const offY = e.clientY - rect.top;
+      const move = (ev) => {
+        panelPos = {
+          left: Math.max(0, Math.min(ev.clientX - offX, innerWidth - panel.offsetWidth)),
+          top: Math.max(0, Math.min(ev.clientY - offY, innerHeight - panel.offsetHeight)),
+        };
+        applyPanelPos();
+      };
+      const up = () => {
+        removeEventListener('pointermove', move);
+        removeEventListener('pointerup', up);
+      };
+      addEventListener('pointermove', move);
+      addEventListener('pointerup', up);
+    }
+
     function renderPanel(focusId) {
       panel.style.display = active ? 'block' : 'none';
+      panel.className = 'atn-panel' + (panelCollapsed ? ' atn-panel--collapsed' : '');
       panel.textContent = '';
       panelSig = JSON.stringify(annotations);
-      const h = document.createElement('h3');
-      h.textContent = `annotations (${annotations.length})`;
-      const done = annotations.filter((a) => a.status === 'resolved' || a.status === 'dismissed').length;
-      if (done) {
-        const clear = document.createElement('button');
-        clear.className = 'atn-clear';
-        clear.textContent = `clear done (${done})`;
-        clear.onclick = () => server.send('astrotation:clear', {});
-        h.appendChild(clear);
+
+      // Header: [grip] · (title + clear-done | status dots) · [chevron]
+      const head = document.createElement('div');
+      head.className = 'atn-head';
+      const grip = document.createElement('div');
+      grip.className = 'atn-grip';
+      grip.title = 'drag to move';
+      grip.innerHTML = GRIP_SVG;
+      grip.addEventListener('pointerdown', startDrag);
+
+      const mid = document.createElement('div');
+      mid.className = 'atn-headmid';
+      if (panelCollapsed) {
+        const counts = {};
+        annotations.forEach((a) => { const s = a.status || 'pending'; counts[s] = (counts[s] || 0) + 1; });
+        ['pending', 'acknowledged', 'feedback', 'resolved', 'dismissed'].forEach((k) => {
+          if (!counts[k]) return;
+          const chip = document.createElement('span');
+          chip.className = 'atn-stat';
+          chip.title = STATUS[k].label;
+          const dot = document.createElement('i');
+          dot.style.background = STATUS[k].color;
+          chip.append(dot, document.createTextNode(String(counts[k])));
+          mid.appendChild(chip);
+        });
+      } else {
+        const title = document.createElement('span');
+        title.className = 'atn-title';
+        title.textContent = `annotations (${annotations.length})`;
+        mid.appendChild(title);
+        const done = annotations.filter((a) => a.status === 'resolved' || a.status === 'dismissed').length;
+        if (done) {
+          const clear = document.createElement('button');
+          clear.className = 'atn-clear';
+          clear.textContent = `clear done (${done})`;
+          clear.onclick = () => server.send('astrotation:clear', {});
+          mid.appendChild(clear);
+        }
       }
-      panel.appendChild(h);
+
+      const chev = document.createElement('button');
+      chev.className = panelCollapsed ? 'atn-chev is-collapsed' : 'atn-chev';
+      chev.title = panelCollapsed ? 'expand' : 'collapse';
+      chev.innerHTML = CHEVRON_SVG;
+      chev.onclick = () => { panelCollapsed = !panelCollapsed; renderPanel(focusId); };
+
+      head.append(grip, mid, chev);
+      panel.appendChild(head);
+
+      if (panelCollapsed) { applyPanelPos(); return; }
 
       if (!annotations.length) {
         const empty = document.createElement('div');
@@ -376,7 +473,7 @@ export default defineToolbarApp({
             pfx.className = 'atn-pfx';
             pfx.textContent = '❯';
             const who = document.createElement('span');
-            who.className = 'atn-who';
+            who.className = m.from === 'agent' ? 'atn-who-agent' : 'atn-who-me';
             who.textContent = `${m.from === 'agent' ? 'agent' : 'me'}: `;
             msg.append(pfx, who, document.createTextNode(m.message));
             th.appendChild(msg);
@@ -392,7 +489,14 @@ export default defineToolbarApp({
         const delBtn = document.createElement('button');
         delBtn.textContent = 'delete';
         delBtn.onclick = () => server.send('astrotation:delete', { id: a.id });
-        actions.append(replyBtn, delBtn);
+        const resolved = a.status === 'resolved';
+        const resBtn = document.createElement('button');
+        resBtn.className = resolved ? 'atn-resolve is-resolved' : 'atn-resolve';
+        resBtn.textContent = resolved ? 'unresolve' : 'resolve';
+        resBtn.title = resolved ? 'reopen (undo resolve)' : 'mark resolved';
+        resBtn.onclick = () =>
+          server.send('astrotation:set-status', { id: a.id, status: resolved ? 'acknowledged' : 'resolved' });
+        actions.append(replyBtn, delBtn, resBtn);
         item.appendChild(actions);
 
         // Re-open the reply box across rebuilds so an in-flight draft isn't lost.
@@ -402,13 +506,17 @@ export default defineToolbarApp({
       });
 
       if (annotations.length) {
+        const foot = document.createElement('div');
+        foot.className = 'atn-foot';
         const copy = document.createElement('button');
         copy.className = 'atn-btn';
-        copy.style.marginTop = '4px';
         copy.textContent = 'copy markdown';
         copy.onclick = () => navigator.clipboard.writeText(annotationsToMarkdown(annotations));
-        panel.appendChild(copy);
+        foot.appendChild(copy);
+        panel.appendChild(foot);
       }
+
+      applyPanelPos();
     }
 
     /* ---------- annotate flow ---------- */

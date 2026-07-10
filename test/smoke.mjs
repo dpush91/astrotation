@@ -117,8 +117,8 @@ async function testMcpTools() {
   const names = tools.map((t) => t.name).sort();
   assert.deepEqual(names, [
     'astrotation_acknowledge', 'astrotation_clear', 'astrotation_dismiss',
-    'astrotation_get', 'astrotation_list', 'astrotation_reply',
-    'astrotation_resolve', 'astrotation_watch',
+    'astrotation_feedback', 'astrotation_get', 'astrotation_list',
+    'astrotation_reply', 'astrotation_watch',
   ]);
   ok(`all 8 tools registered`);
 
@@ -149,13 +149,13 @@ async function testMcpTools() {
   assert.equal(none.length, 0);
   ok('astrotation_list filters by status');
 
-  const resolved = parse(await client.callTool({
-    name: 'astrotation_resolve', arguments: { id: seed.id, summary: 'widened column' },
+  const feedback = parse(await client.callTool({
+    name: 'astrotation_feedback', arguments: { id: seed.id, summary: 'widened column' },
   }));
-  assert.equal(resolved.status, 'resolved');
-  assert.equal(resolved.resolution, 'widened column');
-  assert.equal(resolved.thread.at(-1).from, 'agent');
-  ok('astrotation_resolve sets status + resolution + agent thread msg');
+  assert.equal(feedback.status, 'feedback');
+  assert.equal(feedback.resolution, 'widened column');
+  assert.equal(feedback.thread.at(-1).from, 'agent');
+  ok('astrotation_feedback sets status=feedback + resolution + agent thread msg');
 
   const q = parse(await client.callTool({
     name: 'astrotation_reply', arguments: { id: seed.id, message: 'which breakpoint?' },
@@ -163,6 +163,9 @@ async function testMcpTools() {
   assert.equal(q.thread.at(-1).message, 'which breakpoint?');
   ok('astrotation_reply appends agent question');
 
+  // Owner reviews the feedback and resolves it in the overlay (client-side
+  // set-status, not an MCP tool) — simulate that before housekeeping.
+  store.update(seed.id, { status: 'resolved' });
   const cleared = parse(await client.callTool({ name: 'astrotation_clear', arguments: {} }));
   assert.equal(cleared.removed, 1);
   assert.equal(store.list().length, 0);

@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.5.0 — 2026-07-10
+
+### Changed
+- **New review flow: the agent no longer resolves.** `astrotation_resolve` is
+  replaced by `astrotation_feedback` — the agent's terminal action after a fix
+  turns the pin RED (◆ `feedback` = "done, review me"). The owner reviews in
+  the overlay and either resolves it green (new client-side status button, via
+  the `astrotation:set-status` toolbar event) or replies with more notes to
+  iterate. `resolved`/`dismissed` are owner-side now.
+- New `feedback` status everywhere: store JSDoc, `astrotation_list`/
+  `astrotation_clear` enums, watch-loop description (watch → ack → fix →
+  feedback), panel glyph ◆ (red #ef4d5a, colorblind-safe), notification badge
+  wakes on agent feedback posts.
+- Edge-to-edge divider under the panel header (expanded state only).
+- Background texture confirmed as the owner's own artwork — ships as-is,
+  MIT-clean (supersedes the 0.4.2 note about swapping it before publish).
+
 ## 0.4.5 — 2026-07-09
 
 ### Changed

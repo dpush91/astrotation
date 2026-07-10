@@ -16,7 +16,7 @@ export function buildServer(store) {
       description:
         'List page annotations the site owner created in the Astro dev toolbar. Each annotation carries the owner note plus element context: CSS selector, Astro source file:line (sourceFile/sourceLoc), Tailwind classes, computed styles, text excerpt.',
       inputSchema: {
-        status: z.enum(['pending', 'acknowledged', 'resolved', 'dismissed']).optional(),
+        status: z.enum(['pending', 'acknowledged', 'feedback', 'resolved', 'dismissed']).optional(),
         page: z.string().optional().describe('Filter by pathname, e.g. "/"'),
       },
     },
@@ -37,7 +37,7 @@ export function buildServer(store) {
     'astrotation_watch',
     {
       description:
-        'Block until the owner creates new annotations or replies, then return the batch. Use in a loop for hands-free mode: watch → acknowledge → fix → resolve → watch again. Returns { annotations, replies, timedOut }.',
+        'Block until the owner creates new annotations or replies, then return the batch. Use in a loop for hands-free mode: watch → acknowledge → fix → feedback → watch again. Returns { annotations, replies, timedOut }.',
       inputSchema: {
         timeoutSec: z.number().min(5).max(600).optional()
           .describe('Give up after this many seconds (default 120)'),
@@ -59,16 +59,17 @@ export function buildServer(store) {
   );
 
   s.registerTool(
-    'astrotation_resolve',
+    'astrotation_feedback',
     {
-      description: 'Mark an annotation as fixed. Summary is shown to the owner in the overlay.',
+      description:
+        "You finished the change — hand it back for the owner to review. Turns the pin RED (\"feedback\" = needs your review). You do NOT resolve: the owner verifies in the overlay and resolves it green if good, or replies with more notes if not. Use this as your terminal action after every fix (instead of resolving). Summary is shown to the owner.",
       inputSchema: {
         id: z.string(),
-        summary: z.string().describe('One-two sentences: what was changed'),
+        summary: z.string().describe('One-two sentences: what you changed, ready for the owner to review'),
       },
     },
     async ({ id, summary }) => {
-      const a = store.update(id, { status: 'resolved', resolution: summary });
+      const a = store.update(id, { status: 'feedback', resolution: summary });
       if (a) store.reply(id, 'agent', summary);
       return json(a ?? { error: `no annotation ${id}` });
     }
@@ -106,7 +107,7 @@ export function buildServer(store) {
         'Housekeeping: bulk-remove annotations by status. Defaults to clearing resolved+dismissed once the owner has seen them. Returns the number removed.',
       inputSchema: {
         status: z
-          .array(z.enum(['pending', 'acknowledged', 'resolved', 'dismissed']))
+          .array(z.enum(['pending', 'acknowledged', 'feedback', 'resolved', 'dismissed']))
           .optional()
           .describe('Statuses to remove (default ["resolved","dismissed"])'),
       },

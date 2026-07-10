@@ -9,7 +9,8 @@ import { randomUUID } from 'node:crypto';
  * Annotation shape:
  * { id, createdAt, page, url, viewport, element, selector, sourceFile,
  *   sourceLoc, classes, styles, text, selectedText, box, comment,
- *   status: 'pending'|'acknowledged'|'resolved'|'dismissed',
+ *   status: 'pending'|'acknowledged'|'feedback'|'resolved'|'dismissed',
+ *     ('feedback' = agent finished, awaiting owner review; owner resolves)
  *   thread: [{ from: 'agent'|'owner', message, at }], resolution }
  */
 export class AnnotationStore extends EventEmitter {

@@ -15,7 +15,7 @@ browser: toolbar.js (Dev Toolbar app, ShadowRoot UI)
 dev server: index.js (integration) + store.js (JSON file + EventEmitter)
    ↕ mcp.js — Streamable HTTP MCP on 127.0.0.1:7133/mcp (stateless,
      fresh McpServer per request; store is the shared singleton)
-Claude Code: astrotation_list / get / watch / acknowledge / resolve /
+Claude Code: astrotation_list / get / watch / acknowledge / feedback /
              dismiss / reply / clear
 ```
 
@@ -43,8 +43,10 @@ Claude Code: astrotation_list / get / watch / acknowledge / resolve /
   `role`/`aria-label` — richer context for the agent than a selector alone.
 - Store file: `<project>/.astrotation/annotations.json` (host projects
   should gitignore it).
-- Statuses: pending → acknowledged → resolved | dismissed. Owner replies
-  wake `astrotation_watch`.
+- Statuses: pending → acknowledged → feedback (agent done, awaiting owner
+  review) → resolved | dismissed. Agent terminal action = `astrotation_feedback`
+  (pin turns red ◆); resolve/dismiss are owner-side (overlay set-status button).
+  Owner replies wake `astrotation_watch`.
 - License: MIT, ours. Agentation (PolyForm Shield) used as concept
   reference ONLY — no code copied. See decisions.md.
 
