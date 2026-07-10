@@ -15,8 +15,9 @@ Dev-only. Nothing ships to production builds.
 - **One process.** The Astro integration hosts both the toolbar UI (Dev
   Toolbar app) and the MCP server inside the dev server. No separate CLI, no
   CORS, no extra ports to babysit.
-- **Live both ways.** Agent resolves an annotation → the pin turns green in
-  your overlay. Agent asks a question → you reply in the overlay.
+- **Live both ways.** Agent finishes a fix → the pin turns red (◆ feedback,
+  "review me") in your overlay; you resolve it green after checking. Agent
+  asks a question → you reply in the overlay.
 
 ## Install
 
@@ -45,13 +46,15 @@ claude mcp add --transport http astrotation http://localhost:7133/mcp
 1. `npm run dev`, open the site, click the ⊕ Astrotation icon in the Astro
    dev toolbar.
 2. Hover an element (press `↑`/`↓` to select its parent/child for pixel-exact
-   targeting) → click → write a note → Save (⌘Enter). Pin appears.
-3. Tell your agent «глянь анотації» — or put it in hands-free mode:
+   targeting) → click → type a note at the `❯` prompt → Enter. Pin appears.
+3. Tell your agent to check the annotations — or put it in hands-free mode:
    *"call astrotation_watch in a loop; for each annotation: acknowledge, fix,
-   resolve with a summary"*.
-4. Pins recolor live: 🟡 pending → 🔵 acknowledged → 🟢 resolved / ⚪ dismissed.
-   Agent questions show in the annotation thread; reply inline. Hit
-   **clear done** in the panel to tidy resolved/dismissed pins.
+   hand back with astrotation_feedback + a summary"*.
+4. Pins recolor live: ○ open → ◑ in progress → ◆ feedback ("done, review
+   me"). You review the change and hit **resolve** in the panel (✓ green) —
+   or reply with more notes and the agent iterates. Agent questions show in
+   the annotation thread; reply inline. Hit **clear done** to tidy
+   resolved/dismissed pins.
 
 ## MCP tools
 
@@ -61,7 +64,7 @@ claude mcp add --transport http astrotation http://localhost:7133/mcp
 | `astrotation_get` | One annotation, full detail (thread, source, styles, outerHTML) |
 | `astrotation_watch` | Block until new annotations/replies, return batch |
 | `astrotation_acknowledge` | Mark as being worked on |
-| `astrotation_resolve` | Mark fixed, with summary shown to the owner |
+| `astrotation_feedback` | Hand a finished fix back for review, with a summary (agent's terminal action — resolving is yours, in the overlay) |
 | `astrotation_dismiss` | Decline with a reason |
 | `astrotation_reply` | Ask the owner a clarifying question |
 | `astrotation_clear` | Bulk-remove annotations by status (default: resolved+dismissed) |
