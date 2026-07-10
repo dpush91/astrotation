@@ -103,6 +103,3 @@ Add `.astrotation/` to your `.gitignore` (session artifacts, not source).
 ## License
 
 MIT © Dmytro Karpushyn
-
-Concept inspired by [Agentation](https://agentation.com) (Benji Taylor) —
-independent implementation, no code shared.
