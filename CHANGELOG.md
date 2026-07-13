@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.5.1 — 2026-07-13
+
+### Fixed
+- **`astrotation_watch` no longer loses annotations created while the agent
+  was busy.** watch() was purely event-based: `new`/`owner-reply` events that
+  fired while no watch call was active (the agent mid-fix on another item)
+  went nowhere, so those annotations sat "open" forever and the watch loop
+  idled past them. watch() is now scan-based: on entry (and on every store
+  change) it scans for deliverable work and returns backlog immediately —
+  pending annotations the agent hasn't picked up, plus acknowledged/feedback
+  threads where the owner spoke last. An unanswered agent question parks its
+  item until the owner replies (no re-deliver loops; feedback/dismiss already
+  push an agent thread entry, so handed-back items stay parked too).
+- Watch now rides the `change` event, which also fires on external file
+  writes — a second process feeding the same store file wakes the watch.
+
 ## 0.5.0 — 2026-07-10
 
 ### Changed

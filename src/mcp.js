@@ -37,7 +37,7 @@ export function buildServer(store) {
     'astrotation_watch',
     {
       description:
-        'Block until the owner creates new annotations or replies, then return the batch. Use in a loop for hands-free mode: watch → acknowledge → fix → feedback → watch again. Returns { annotations, replies, timedOut }.',
+        'Block until the owner creates new annotations or replies, then return the batch. Backlog-safe: anything created while you were busy fixing (unhandled pending annotations, owner replies awaiting you) returns immediately on the next call — nothing is lost between calls. Use in a loop for hands-free mode: watch → acknowledge → fix → feedback → watch again. Returns { annotations, replies, timedOut }.',
       inputSchema: {
         timeoutSec: z.number().min(5).max(600).optional()
           .describe('Give up after this many seconds (default 120)'),

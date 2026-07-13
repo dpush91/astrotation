@@ -145,33 +145,56 @@ export class AnnotationStore extends EventEmitter {
   }
 
   /**
-   * Block until new annotations or owner replies appear, then return the
-   * batch (collects for `batchMs` after the first event so rapid-fire
-   * annotations arrive together). Resolves { annotations, replies, timedOut }.
+   * Work that currently needs the agent, judged by whose move it is:
+   * - annotations: pending items the agent hasn't picked up — unless the
+   *   agent spoke last (an unanswered clarifying question stays parked).
+   * - replies: acknowledged/feedback threads where the owner spoke last.
+   * feedback/dismiss push an agent thread entry, so a handed-back item
+   * doesn't re-deliver until the owner responds.
+   */
+  _pendingWork() {
+    const lastFrom = (a) => a.thread.at(-1)?.from ?? null;
+    return {
+      annotations: this.annotations.filter(
+        (a) => a.status === 'pending' && lastFrom(a) !== 'agent'
+      ),
+      replies: this.annotations.filter(
+        (a) =>
+          (a.status === 'acknowledged' || a.status === 'feedback') &&
+          lastFrom(a) === 'owner'
+      ),
+    };
+  }
+
+  /**
+   * Block until work needs the agent, then return the batch. Scan-based, not
+   * event-based: anything created while no watch was active (agent busy
+   * fixing the previous item) is returned immediately as backlog on the next
+   * call instead of being lost. Rides the 'change' event, which also fires on
+   * external file writes — a second process feeding the store wakes the watch
+   * too. Collects for `batchMs` after the first deliverable so rapid-fire
+   * annotations arrive together. Resolves { annotations, replies, timedOut }.
    */
   watch(timeoutMs, batchMs = 1500) {
     return new Promise((resolve) => {
-      const annotations = [];
-      const replies = [];
       let batchTimer = null;
 
-      const finish = (timedOut = false) => {
-        this.off('new', onNew);
-        this.off('owner-reply', onReply);
+      const finish = (timedOut) => {
+        this.off('change', check);
         clearTimeout(timeoutTimer);
         clearTimeout(batchTimer);
-        resolve({ annotations, replies, timedOut });
+        resolve({ ...this._pendingWork(), timedOut });
       };
 
-      const arm = () => {
-        if (!batchTimer) batchTimer = setTimeout(() => finish(false), batchMs);
+      const check = () => {
+        const { annotations, replies } = this._pendingWork();
+        if ((annotations.length || replies.length) && !batchTimer)
+          batchTimer = setTimeout(() => finish(false), batchMs);
       };
-      const onNew = (a) => { annotations.push(a); arm(); };
-      const onReply = (a) => { replies.push(a); arm(); };
 
-      this.on('new', onNew);
-      this.on('owner-reply', onReply);
       const timeoutTimer = setTimeout(() => finish(true), timeoutMs);
+      this.on('change', check);
+      check();
     });
   }
 }

@@ -71,18 +71,55 @@ async function testStore() {
   assert.equal(store.get(b.id).comment, 'second');
   ok('clear() drops resolved+dismissed only');
 
-  // watch() resolves with the batch when a new annotation lands.
+  // watch() delivers pending backlog immediately — annotations created while
+  // no watch was active (agent busy fixing) must not be lost between calls.
+  const backlog = await store.watch(3000, 50);
+  assert.equal(backlog.timedOut, false);
+  assert.equal(backlog.annotations.length, 1);
+  assert.equal(backlog.annotations[0].comment, 'second');
+  ok('watch() returns pending backlog immediately (no event needed)');
+
+  store.update(b.id, { status: 'acknowledged' });
+
+  // watch() resolves with the batch when a new annotation lands live.
   const watching = store.watch(3000, 50);
   store.add({ ...SAMPLE, comment: 'live' });
   const batch = await watching;
   assert.equal(batch.timedOut, false);
   assert.equal(batch.annotations.length, 1);
   assert.equal(batch.annotations[0].comment, 'live');
+  const live = batch.annotations[0];
   ok('watch() unblocks on new annotation with the batch');
 
+  // An unanswered agent question parks the item (ball in owner's court)…
+  store.reply(live.id, 'agent', 'which breakpoint?');
+  const quiet = await store.watch(120, 50);
+  assert.equal(quiet.timedOut, true);
+  assert.equal(quiet.annotations.length, 0);
+  ok('watch() skips pending item whose last thread msg is an agent question');
+
+  // …and the owner's answer brings it right back as backlog.
+  store.reply(live.id, 'owner', 'mobile');
+  const answered = await store.watch(3000, 50);
+  assert.equal(answered.annotations.length, 1);
+  assert.equal(answered.annotations[0].id, live.id);
+  ok('watch() re-delivers once the owner answers');
+
+  // Owner reply on a handed-back (feedback) item while no watch was active
+  // → replies backlog on the next call.
+  store.update(live.id, { status: 'feedback' });
+  store.reply(live.id, 'agent', 'widened, review please');
+  store.reply(live.id, 'owner', 'not quite, keep going');
+  const rework = await store.watch(3000, 50);
+  assert.equal(rework.replies.length, 1);
+  assert.equal(rework.replies[0].id, live.id);
+  ok('watch() returns owner replies posted while agent was busy (backlog)');
+
+  store.update(live.id, { status: 'resolved' });
   const timedOut = await store.watch(120, 50);
   assert.equal(timedOut.timedOut, true);
-  ok('watch() reports timedOut when nothing happens');
+  assert.equal(timedOut.annotations.length + timedOut.replies.length, 0);
+  ok('watch() reports timedOut when nothing needs the agent');
 
   store.close();
 
